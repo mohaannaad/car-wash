@@ -8,6 +8,12 @@ type LocationData = {
   address: string;
 } | null;
 
+type CustomerData = {
+  name: string;
+  phone: string;
+  plate: string;
+};
+
 type BookingData = {
   carType: string | null;
   service: string | null;
@@ -15,6 +21,7 @@ type BookingData = {
   location: LocationData;
   date: string | null;
   time: string | null;
+  customer: CustomerData;
 };
 
 type BookingContextType = {
@@ -25,6 +32,7 @@ type BookingContextType = {
   setLocation: (value: LocationData) => void;
   setDate: (value: string) => void;
   setTime: (value: string) => void;
+  setCustomer: (value: CustomerData) => void;
 };
 
 const BookingContext = createContext<BookingContextType | undefined>(
@@ -39,6 +47,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     location: null,
     date: null,
     time: null,
+    customer: { name: "", phone: "", plate: "" },
   });
 
   const setCarType = (value: string) => {
@@ -70,6 +79,10 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     setBooking((prev) => ({ ...prev, time: value }));
   };
 
+  const setCustomer = (value: CustomerData) => {
+    setBooking((prev) => ({ ...prev, customer: value }));
+  };
+
   return (
     <BookingContext.Provider
       value={{
@@ -80,6 +93,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
         setLocation,
         setDate,
         setTime,
+        setCustomer,
       }}
     >
       {children}
