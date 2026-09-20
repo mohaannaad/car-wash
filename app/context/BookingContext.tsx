@@ -2,10 +2,19 @@
 
 import { createContext, useContext, useState, ReactNode } from "react";
 
+type LocationData = {
+  lat: number;
+  lng: number;
+  address: string;
+} | null;
+
 type BookingData = {
   carType: string | null;
   service: string | null;
   extras: string[];
+  location: LocationData;
+  date: string | null;
+  time: string | null;
 };
 
 type BookingContextType = {
@@ -13,6 +22,9 @@ type BookingContextType = {
   setCarType: (value: string) => void;
   setService: (value: string) => void;
   toggleExtra: (value: string) => void;
+  setLocation: (value: LocationData) => void;
+  setDate: (value: string) => void;
+  setTime: (value: string) => void;
 };
 
 const BookingContext = createContext<BookingContextType | undefined>(
@@ -24,6 +36,9 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     carType: null,
     service: null,
     extras: [],
+    location: null,
+    date: null,
+    time: null,
   });
 
   const setCarType = (value: string) => {
@@ -43,9 +58,29 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  const setLocation = (value: LocationData) => {
+    setBooking((prev) => ({ ...prev, location: value }));
+  };
+
+  const setDate = (value: string) => {
+    setBooking((prev) => ({ ...prev, date: value }));
+  };
+
+  const setTime = (value: string) => {
+    setBooking((prev) => ({ ...prev, time: value }));
+  };
+
   return (
     <BookingContext.Provider
-      value={{ booking, setCarType, setService, toggleExtra }}
+      value={{
+        booking,
+        setCarType,
+        setService,
+        toggleExtra,
+        setLocation,
+        setDate,
+        setTime,
+      }}
     >
       {children}
     </BookingContext.Provider>
