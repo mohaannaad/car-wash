@@ -7,6 +7,7 @@
   --color-text-secondary: #6B7280;
   --color-bg-page: #F5F5F5;
   --color-disabled: #C4C4C4;
+  --color-primary-light: #EAF7F8;
 
   --font-cairo: var(--font-cairo);
 }
