@@ -13,7 +13,7 @@ export default function CustomerStep() {
   const [plate, setPlate] = useState("");
   const [error, setError] = useState("");
 
-  const isPhoneValid = /^05\d{8}$/.test(phone);
+  const isPhoneValid = /^01[0125]\d{8}$/.test(phone);
   const isNameValid = name.trim().length >= 3;
   const isPlateValid = plate.trim().length >= 3;
   const isFormValid = isNameValid && isPhoneValid && isPlateValid;
@@ -80,7 +80,7 @@ export default function CustomerStep() {
               type="tel"
               dir="ltr"
               value={phone}
-              onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+              onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
               placeholder="05XXXXXXXX"
               className="flex-1 text-text-main text-sm outline-none placeholder:text-[#98A2B3] text-right"
             />

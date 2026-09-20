@@ -1,0 +1,163 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useBooking } from "../../context/BookingContext";
+
+const carTypeNames: Record<string, string> = {
+  suv: "دفع رباعي",
+  sedan: "سيدان",
+  pickup: "بيك أب",
+  van: "فان",
+  sports: "رياضية",
+  hatchback: "هاتشباك",
+};
+
+const serviceInfo: Record<string, { name: string; price: number }> = {
+  external: { name: "غسيل خارجي", price: 50 },
+  internal: { name: "غسيل داخلي", price: 80 },
+  full: { name: "غسيل كامل", price: 120 },
+};
+
+const extrasInfo: Record<string, { name: string; price: number }> = {
+  perfume: { name: "تعطير السيارة", price: 15 },
+  tires: { name: "تلميع الإطارات", price: 20 },
+  "interior-polish": { name: "تلميع الدواخل", price: 25 },
+  engine: { name: "غسيل المحرك", price: 40 },
+  ozone: { name: "إزالة الروائح (أوزون)", price: 30 },
+};
+
+function SummaryRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center gap-3.5">
+      <div className="shrink-0 w-11 h-11 rounded-xl bg-primary-light flex items-center justify-center">
+        {icon}
+      </div>
+      <div className="flex-1 flex flex-col gap-0.5">
+        <span className="text-text-secondary text-xs">{label}</span>
+        <span className="text-text-main text-sm font-bold">{value}</span>
+      </div>
+    </div>
+  );
+}
+
+export default function SummaryStep() {
+  const router = useRouter();
+  const { booking } = useBooking();
+
+  const service = booking.service ? serviceInfo[booking.service] : null;
+  const selectedExtras = booking.extras.map((id) => extrasInfo[id]).filter(Boolean);
+  const extrasTotal = selectedExtras.reduce((sum, item) => sum + item.price, 0);
+  const total = (service?.price ?? 0) + extrasTotal;
+
+  const handleConfirm = () => {
+    router.push("/booking/confirmation");
+  };
+
+  return (
+    <main className="min-h-screen flex flex-col bg-bg-page">
+      <div className="px-6 pt-8 pb-5 flex flex-col gap-1">
+        <h1 className="text-text-main text-2xl font-extrabold">ملخص الطلب</h1>
+        <p className="text-text-secondary text-sm">راجع تفاصيل طلبك قبل التأكيد</p>
+      </div>
+
+      <div className="flex-1 flex flex-col gap-4 px-5 overflow-y-auto">
+        <div className="bg-white rounded-2xl p-4 flex flex-col gap-4 shadow-[0_2px_10px_rgba(16,24,40,0.05)]">
+          <SummaryRow
+            label="نوع السيارة"
+            value={booking.carType ? carTypeNames[booking.carType] : "-"}
+            icon={
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#19B9C6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 15.5V12l1.6-4a2 2 0 0 1 1.9-1.3h9a2 2 0 0 1 1.9 1.3l1.6 4v3.5" />
+                <path d="M1.5 15.5h21" />
+                <circle cx="7" cy="16" r="1.5" />
+                <circle cx="17" cy="16" r="1.5" />
+              </svg>
+            }
+          />
+          <SummaryRow
+            label="رقم اللوحة"
+            value={booking.customer.plate || "-"}
+            icon={
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#19B9C6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="7" width="18" height="10" rx="2" />
+                <path d="M6.5 12h11M7.5 14.5h4" />
+              </svg>
+            }
+          />
+          <SummaryRow
+            label="الموقع"
+            value={booking.location?.address || "-"}
+            icon={
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#19B9C6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+            }
+          />
+          <SummaryRow
+            label="الموعد"
+            value={booking.date && booking.time ? `${booking.date} - ${booking.time}` : "-"}
+            icon={
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#19B9C6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="5" width="18" height="16" rx="2" />
+                <path d="M3 10h18M8 3v4M16 3v4" />
+              </svg>
+            }
+          />
+          <SummaryRow
+            label="الاسم ورقم الجوال"
+            value={`${booking.customer.name || "-"} · ${booking.customer.phone || "-"}`}
+            icon={
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#19B9C6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="8" r="4" />
+                <path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8" />
+              </svg>
+            }
+          />
+        </div>
+
+        <div className="bg-white rounded-2xl p-4 flex flex-col gap-3 shadow-[0_2px_10px_rgba(16,24,40,0.05)]">
+          <span className="text-text-main text-sm font-bold">الخدمات المطلوبة</span>
+
+          {service && (
+            <div className="flex items-center justify-between">
+              <span className="text-text-main text-sm">{service.name}</span>
+              <span className="text-text-main text-sm font-bold">{service.price} ر.س</span>
+            </div>
+          )}
+
+          {selectedExtras.map((item, index) => (
+            <div key={index} className="flex items-center justify-between">
+              <span className="text-text-secondary text-sm">{item.name}</span>
+              <span className="text-text-secondary text-sm font-bold">{item.price} ر.س</span>
+            </div>
+          ))}
+
+          <div className="h-px bg-[#EEF2F3] my-1" />
+
+          <div className="flex items-center justify-between">
+            <span className="text-text-main text-base font-extrabold">الإجمالي</span>
+            <span className="text-primary text-lg font-extrabold">{total} ر.س</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-5 pt-4 pb-8">
+        <button
+          onClick={handleConfirm}
+          className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-white bg-primary shadow-[0_8px_20px_rgba(25,185,198,0.35)]"
+        >
+          تأكيد وإرسال الطلب
+        </button>
+      </div>
+    </main>
+  );
+}
