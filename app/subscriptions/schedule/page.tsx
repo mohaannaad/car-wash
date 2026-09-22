@@ -78,7 +78,7 @@ export default function SubscriptionSchedulePage() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col bg-bg-page">
+    <main className="min-h-dvh flex flex-col bg-bg-page">
       {/* العنوان */}
       <div className="px-6 pt-8 pb-5 flex flex-col gap-1">
         <h1 className="text-text-main text-2xl font-extrabold">حدد معاد الغسيل</h1>

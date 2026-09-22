@@ -62,7 +62,7 @@ export default function SummaryStep() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col bg-bg-page">
+    <main className="min-h-dvh flex flex-col bg-bg-page">
       <div className="px-6 pt-8 pb-5 flex flex-col gap-1">
         <h1 className="text-text-main text-2xl font-extrabold">ملخص الطلب</h1>
         <p className="text-text-secondary text-sm">راجع تفاصيل طلبك قبل التأكيد</p>

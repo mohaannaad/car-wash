@@ -7,7 +7,7 @@ export default function ConfirmationStep() {
   const { booking } = useBooking();
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-bg-page px-6 text-center gap-6">
+    <main className="min-h-dvh flex flex-col items-center justify-center bg-bg-page px-6 text-center gap-6">
       {/* أيقونة النجاح */}
       <div className="w-24 h-24 rounded-full bg-primary-light flex items-center justify-center">
         <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center">

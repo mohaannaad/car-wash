@@ -73,7 +73,7 @@ export default function LocationStep() {
   };
 
   return (
-    <main className="h-screen flex flex-col bg-bg-page overflow-hidden">
+    <main className="h-dvh flex flex-col bg-bg-page overflow-hidden">
       {/* العنوان */}
       <div className="px-6 pt-8 pb-4 flex flex-col gap-1 shrink-0">
         <h1 className="text-text-main text-2xl font-extrabold">موقع السيارة</h1>

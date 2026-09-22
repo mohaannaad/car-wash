@@ -3,8 +3,7 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <main className="relative min-h-screen flex flex-col items-center justify-between overflow-hidden">
-      {/* صورة الخلفية */}
+    <main className="relative min-h-dvh flex flex-col items-center justify-between overflow-hidden">
       <Image
         src="/images/hero-bg.png"
         alt="خدمة غسيل السيارات"
