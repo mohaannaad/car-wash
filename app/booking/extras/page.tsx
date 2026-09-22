@@ -84,15 +84,15 @@ export default function ExtrasStep() {
   };
 
   return (
-    <main className="min-h-dvh flex flex-col bg-bg-page">
+    <main className="h-dvh flex flex-col bg-bg-page overflow-hidden">
       {/* العنوان */}
-      <div className="px-6 pt-8 pb-5 flex flex-col gap-1">
+      <div className="px-6 pt-8 pb-5 flex flex-col gap-1 shrink-0">
         <h1 className="text-text-main text-2xl font-extrabold">خدمات إضافية</h1>
         <p className="text-text-secondary text-sm">اختر أي خدمات إضافية حابب تضيفها لطلبك (اختياري)</p>
       </div>
 
       {/* قائمة الخدمات الإضافية */}
-      <div className="flex-1 flex flex-col gap-3.5 px-5">
+      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-3.5 px-5">
         {extrasList.map((item) => {
           const isSelected = booking.extras.includes(item.id);
           return (
@@ -147,7 +147,7 @@ export default function ExtrasStep() {
       </div>
 
       {/* زرار التالي */}
-      <div className="px-5 pt-4 pb-8">
+      <div className="px-5 pt-4 pb-8 shrink-0">
         <button
           onClick={handleNext}
           className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-white bg-primary shadow-[0_8px_20px_rgba(25,185,198,0.35)] transition-colors"

@@ -62,13 +62,13 @@ export default function SummaryStep() {
   };
 
   return (
-    <main className="min-h-dvh flex flex-col bg-bg-page">
-      <div className="px-6 pt-8 pb-5 flex flex-col gap-1">
+    <main className="h-dvh flex flex-col bg-bg-page overflow-hidden">
+     <div className="px-6 pt-8 pb-5 flex flex-col gap-1 shrink-0">
         <h1 className="text-text-main text-2xl font-extrabold">ملخص الطلب</h1>
         <p className="text-text-secondary text-sm">راجع تفاصيل طلبك قبل التأكيد</p>
       </div>
 
-      <div className="flex-1 flex flex-col gap-4 px-5 overflow-y-auto">
+      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-4 px-5">
         <div className="bg-white rounded-2xl p-4 flex flex-col gap-4 shadow-[0_2px_10px_rgba(16,24,40,0.05)]">
           <SummaryRow
             label="نوع السيارة"
@@ -150,7 +150,7 @@ export default function SummaryStep() {
         </div>
       </div>
 
-      <div className="px-5 pt-4 pb-8">
+      <div className="px-5 pt-4 pb-8 shrink-0">
         <button
           onClick={handleConfirm}
           className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-white bg-primary shadow-[0_8px_20px_rgba(25,185,198,0.35)]"

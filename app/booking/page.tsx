@@ -26,15 +26,15 @@ export default function CarTypeStep() {
   };
 
   return (
-    <main className="min-h-dvh flex flex-col bg-bg-page">
+    <main className="h-dvh flex flex-col bg-bg-page overflow-hidden">
       {/* العنوان */}
-      <div className="px-6 pt-8 pb-5 flex flex-col gap-1">
+    <div className="px-6 pt-8 pb-5 flex flex-col gap-1 shrink-0">
         <h1 className="text-text-main text-2xl font-extrabold">نوع السيارة</h1>
         <p className="text-text-secondary text-sm">قم باختيار نوع سيارتك</p>
       </div>
 
       {/* شبكة الكروت */}
-      <div className="flex-1 grid grid-cols-2 gap-3.5 px-5">
+      <div className="flex-1 min-h-0 overflow-y-auto grid grid-cols-2 gap-3.5 px-5">
         {carTypes.map((car) => {
           const isSelected = selectedCar === car.id;
           return (
@@ -76,7 +76,7 @@ export default function CarTypeStep() {
       </div>
 
       {/* زرار التالي */}
-      <div className="px-5 pt-4 pb-8">
+      <div className="px-5 pt-4 pb-8 shrink-0">
         <button
           onClick={handleNext}
           disabled={!selectedCar}

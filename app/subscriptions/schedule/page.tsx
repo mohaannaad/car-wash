@@ -78,14 +78,14 @@ export default function SubscriptionSchedulePage() {
   };
 
   return (
-    <main className="min-h-dvh flex flex-col bg-bg-page">
+    <main className="h-dvh flex flex-col bg-bg-page overflow-hidden">
       {/* العنوان */}
-      <div className="px-6 pt-8 pb-5 flex flex-col gap-1">
+      <div className="px-6 pt-8 pb-5 flex flex-col gap-1 shrink-0">
         <h1 className="text-text-main text-2xl font-extrabold">حدد معاد الغسيل</h1>
         <p className="text-text-secondary text-sm">اختر اليوم والوقت المفضل، وهنجهزلك المواعيد تلقائيًا</p>
       </div>
 
-      <div className="flex-1 flex flex-col gap-6 px-5">
+      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-6 px-5">
         {/* اختيار يوم الأسبوع */}
         <div>
           <span className="text-text-main text-sm font-bold mb-3 block">اليوم المفضل أسبوعيًا</span>
@@ -153,7 +153,7 @@ export default function SubscriptionSchedulePage() {
       </div>
 
       {/* زرار التأكيد */}
-      <div className="px-5 pt-4 pb-8">
+      <div className="px-5 pt-4 pb-8 shrink-0">
         <button
           onClick={handleConfirm}
           disabled={selectedDay === null || !selectedTime}
