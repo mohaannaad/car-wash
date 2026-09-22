@@ -38,15 +38,21 @@ export default function Home() {
         </p>
       </div>
 
-      {/* الزرار */}
-      <div className="w-full px-6 pb-10">
-        <Link
-          href="/booking"
-          className="w-full max-w-sm mx-auto block bg-primary text-white font-bold text-center py-4 rounded-full"
-        >
-          ابدأ الطلب
-        </Link>
-      </div>
+   {/* الأزرار */}
+<div className="w-full px-6 pb-10 flex flex-col gap-3">
+  <Link
+    href="/booking"
+    className="w-full max-w-sm mx-auto block bg-primary text-white font-bold text-center py-4 rounded-full"
+  >
+    ابدأ الطلب
+  </Link>
+  <Link
+    href="/subscriptions"
+    className="w-full max-w-sm mx-auto block bg-white/10 border border-white/40 text-white font-bold text-center py-4 rounded-full backdrop-blur-sm"
+  >
+    الباقات الشهرية
+  </Link>
+</div>
     </main>
   );
 }

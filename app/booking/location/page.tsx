@@ -6,7 +6,7 @@ import Map, { Marker, MapRef } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useBooking } from "../../context/BookingContext";
 
-const defaultCenter = { latitude: 24.7136, longitude: 46.6753 }; // الرياض كنقطة افتراضية
+const defaultCenter = { latitude: 24.7136, longitude: 46.6753 };
 
 export default function LocationStep() {
   const router = useRouter();
@@ -73,17 +73,20 @@ export default function LocationStep() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col bg-bg-page">
-      <div className="px-6 pt-8 pb-4 flex flex-col gap-1">
+    <main className="h-screen flex flex-col bg-bg-page overflow-hidden">
+      {/* العنوان */}
+      <div className="px-6 pt-8 pb-4 flex flex-col gap-1 shrink-0">
         <h1 className="text-text-main text-2xl font-extrabold">موقع السيارة</h1>
         <p className="text-text-secondary text-sm">حدد المكان اللي هنيجي نغسل فيه السيارة</p>
       </div>
 
-      <div className="flex-1 relative">
+      {/* الخريطة - تاخد كل المساحة المتبقية */}
+      <div className="flex-1 relative min-h-0">
         <Map
           ref={mapRef}
           {...viewState}
           onMove={(evt) => setViewState(evt.viewState)}
+          onLoad={() => mapRef.current?.resize()}
           mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
           mapStyle="mapbox://styles/mapbox/streets-v12"
           style={{ width: "100%", height: "100%" }}
@@ -100,7 +103,7 @@ export default function LocationStep() {
         <button
           onClick={handleUseCurrentLocation}
           disabled={loadingLocation}
-          className="absolute bottom-4 left-4 bg-white rounded-2xl shadow-[0_4px_14px_rgba(16,24,40,0.12)] px-4 py-3 flex items-center gap-2"
+          className="absolute bottom-4 left-4 bg-white rounded-2xl shadow-[0_4px_14px_rgba(16,24,40,0.12)] px-4 py-3 flex items-center gap-2 z-10"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#19B9C6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="3" />
@@ -112,7 +115,8 @@ export default function LocationStep() {
         </button>
       </div>
 
-      <div className="px-5 pt-4 pb-8 bg-white rounded-t-3xl -mt-4 relative z-10 flex flex-col gap-4">
+      {/* العنوان المحدد + زرار التالي - ثابت تحت، مش متراكب فوق الخريطة */}
+      <div className="shrink-0 px-5 pt-4 pb-6 bg-white flex flex-col gap-4">
         <div className="flex items-start gap-2.5">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#19B9C6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0">
             <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" />
