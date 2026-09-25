@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ===== إدارة المحتوى =====
+
+model CarType {
+  id        String   @id @default(cuid())
+  name      String
+  imageUrl  String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  orders    Order[]
+}
+
+model Service {
+  id              String   @id @default(cuid())
+  name            String
+  description     String
+  price           Int
+  durationMinutes Int
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  orders          Order[]
+}
+
+model Extra {
+  id          String       @id @default(cuid())
+  name        String
+  description String
+  price       Int
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  orderExtras OrderExtra[]
+}
+
+model Package {
+  id            String         @id @default(cuid())
+  name          String
+  washCount     Int
+  serviceLabel  String
+  price         Int
+  originalPrice Int
+  badge         String?
+  features      String[]
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  subscriptions Subscription[]
+}
+
+// ===== العملاء والموظفين =====
+
+model Customer {
+  id            String         @id @default(cuid())
+  name          String
+  phone         String         @unique
+  createdAt     DateTime       @default(now())
+  orders        Order[]
+  subscriptions Subscription[]
+}
+
+model Employee {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String   @unique
+  role      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  orders    Order[]
+}
+
+// ===== الطلبات =====
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  ON_THE_WAY
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model Order {
+  id            String       @id @default(cuid())
+  customer      Customer     @relation(fields: [customerId], references: [id])
+  customerId    String
+  carType       CarType      @relation(fields: [carTypeId], references: [id])
+  carTypeId     String
+  service       Service      @relation(fields: [serviceId], references: [id])
+  serviceId     String
+  extras        OrderExtra[]
+  employee      Employee?    @relation(fields: [employeeId], references: [id])
+  employeeId    String?
+  plateNumber   String
+  locationLat   Float
+  locationLng   Float
+  locationText  String
+  scheduledDate DateTime
+  scheduledTime String
+  totalPrice    Int
+  status        OrderStatus  @default(PENDING)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model OrderExtra {
+  id      String @id @default(cuid())
+  order   Order  @relation(fields: [orderId], references: [id])
+  orderId String
+  extra   Extra  @relation(fields: [extraId], references: [id])
+  extraId String
+  price   Int
+}
+
+// ===== الاشتراكات الشهرية =====
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+}
+
+model Subscription {
+  id         String              @id @default(cuid())
+  customer   Customer            @relation(fields: [customerId], references: [id])
+  customerId String
+  package    Package             @relation(fields: [packageId], references: [id])
+  packageId  String
+  dayOfWeek  Int
+  time       String
+  status     SubscriptionStatus  @default(ACTIVE)
+  createdAt  DateTime            @default(now())
+  washes     SubscriptionWash[]
+}
+
+model SubscriptionWash {
+  id             String       @id @default(cuid())
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id])
+  subscriptionId String
+  scheduledDate  DateTime
+  status         OrderStatus  @default(PENDING)
+}
