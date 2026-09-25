@@ -1,5 +1,7 @@
+"use client";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const navItems = [
   {
@@ -46,6 +48,40 @@ const navItems = [
     ),
   },
   {
+    href: "/admin/car-types",
+    label: "أنواع السيارات",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 15.5V12l1.6-4a2 2 0 0 1 1.9-1.3h9a2 2 0 0 1 1.9 1.3l1.6 4v3.5" />
+        <path d="M1.5 15.5h21" />
+        <circle cx="7" cy="16" r="1.5" />
+        <circle cx="17" cy="16" r="1.5" />
+      </svg>
+    ),
+  },
+  {
+    href: "/admin/services",
+    label: "الخدمات",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 13l2-5a3 3 0 0 1 2.8-2h8.4A3 3 0 0 1 19 8l2 5" />
+        <path d="M3 13h18v4a1 1 0 0 1-1 1h-1.2a1 1 0 0 1-1-.8L17.5 16h-11l-.3 1.2a1 1 0 0 1-1 .8H4a1 1 0 0 1-1-1z" />
+        <circle cx="7.5" cy="16.5" r="1.4" />
+        <circle cx="16.5" cy="16.5" r="1.4" />
+      </svg>
+    ),
+  },
+  {
+    href: "/admin/packages",
+    label: "الباقات الشهرية",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="5" width="18" height="16" rx="2" />
+        <path d="M3 10h18M8 3v4M16 3v4" />
+      </svg>
+    ),
+  },
+  {
     href: "/admin/settings",
     label: "الإعدادات",
     icon: (
@@ -56,8 +92,9 @@ const navItems = [
     ),
   },
 ];
-
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
   return (
     <div className="min-h-screen flex bg-[#F4F7F8]">
       {/* Sidebar */}
@@ -76,16 +113,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* روابط التنقل */}
         <nav className="flex-1 px-3 py-5 flex flex-col gap-1">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-text-secondary hover:bg-primary-light hover:text-primary transition-colors text-sm font-bold"
-            >
-              {item.icon}
-              {item.label}
-            </Link>
-          ))}
+         {navItems.map((item) => {
+  const isActive = item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
+  return (
+    <Link
+      key={item.href}
+      href={item.href}
+      className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-colors text-sm font-bold ${
+        isActive
+          ? "bg-primary-light text-primary"
+          : "text-text-secondary hover:bg-primary-light hover:text-primary"
+      }`}
+    >
+      {item.icon}
+      {item.label}
+    </Link>
+  );
+})}
         </nav>
 
         {/* أسفل الـ Sidebar */}
