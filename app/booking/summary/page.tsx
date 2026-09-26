@@ -4,14 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useBooking } from "../../context/BookingContext";
 
-const extrasInfo: Record<string, { name: string; price: number }> = {
-  perfume: { name: "تعطير السيارة", price: 15 },
-  tires: { name: "تلميع الإطارات", price: 20 },
-  "interior-polish": { name: "تلميع الدواخل", price: 25 },
-  engine: { name: "غسيل المحرك", price: 40 },
-  ozone: { name: "إزالة الروائح (أوزون)", price: 30 },
-};
-
 function SummaryRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="flex items-center gap-3.5">
@@ -30,8 +22,7 @@ export default function SummaryStep() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  const selectedExtras = booking.extras.map((id) => extrasInfo[id]).filter(Boolean);
-  const extrasTotal = selectedExtras.reduce((sum, item) => sum + item.price, 0);
+  const extrasTotal = booking.extras.reduce((sum, item) => sum + item.price, 0);
   const total = (booking.service?.price ?? 0) + extrasTotal;
 
   const handleConfirm = async () => {
@@ -48,7 +39,7 @@ export default function SummaryStep() {
         body: JSON.stringify({
           carTypeId: booking.carType.id,
           serviceId: booking.service.id,
-          extras: selectedExtras,
+          extras: booking.extras,
           plateNumber: booking.customer.plate,
           location: booking.location,
           date: booking.date,
@@ -91,8 +82,8 @@ export default function SummaryStep() {
               <span className="text-text-main text-sm font-bold">{booking.service.price} ر.س</span>
             </div>
           )}
-          {selectedExtras.map((item, index) => (
-            <div key={index} className="flex items-center justify-between">
+          {booking.extras.map((item) => (
+            <div key={item.id} className="flex items-center justify-between">
               <span className="text-text-secondary text-sm">{item.name}</span>
               <span className="text-text-secondary text-sm font-bold">{item.price} ر.س</span>
             </div>

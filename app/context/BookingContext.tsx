@@ -10,6 +10,7 @@ type LocationData = {
 
 type CarTypeData = { id: string; name: string } | null;
 type ServiceData = { id: string; name: string; price: number } | null;
+type ExtraData = { id: string; name: string; price: number };
 
 type CustomerData = {
   name: string;
@@ -20,7 +21,7 @@ type CustomerData = {
 type BookingData = {
   carType: CarTypeData;
   service: ServiceData;
-  extras: string[];
+  extras: ExtraData[];
   location: LocationData;
   date: string | null;
   time: string | null;
@@ -31,7 +32,7 @@ type BookingContextType = {
   booking: BookingData;
   setCarType: (value: CarTypeData) => void;
   setService: (value: ServiceData) => void;
-  toggleExtra: (value: string) => void;
+  toggleExtra: (value: ExtraData) => void;
   setLocation: (value: LocationData) => void;
   setDate: (value: string) => void;
   setTime: (value: string) => void;
@@ -59,11 +60,11 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     setBooking((prev) => ({ ...prev, service: value }));
   };
 
-  const toggleExtra = (value: string) => {
+  const toggleExtra = (value: ExtraData) => {
     setBooking((prev) => ({
       ...prev,
-      extras: prev.extras.includes(value)
-        ? prev.extras.filter((item) => item !== value)
+      extras: prev.extras.some((e) => e.id === value.id)
+        ? prev.extras.filter((e) => e.id !== value.id)
         : [...prev.extras, value],
     }));
   };
