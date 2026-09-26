@@ -2,8 +2,16 @@
 
 import { createContext, useContext, useState, ReactNode } from "react";
 
+type PackageData = {
+  id: string;
+  name: string;
+  washCount: number;
+  serviceLabel: string;
+  price: number;
+} | null;
+
 type SubscriptionData = {
-  packageId: string | null;
+  package: PackageData;
   dayOfWeek: number | null;
   time: string | null;
   scheduleDates: string[];
@@ -11,24 +19,22 @@ type SubscriptionData = {
 
 type SubscriptionContextType = {
   subscription: SubscriptionData;
-  setPackage: (id: string) => void;
+  setPackage: (pkg: PackageData) => void;
   setSchedule: (dayOfWeek: number, time: string, dates: string[]) => void;
 };
 
-const SubscriptionContext = createContext<SubscriptionContextType | undefined>(
-  undefined
-);
+const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [subscription, setSubscription] = useState<SubscriptionData>({
-    packageId: null,
+    package: null,
     dayOfWeek: null,
     time: null,
     scheduleDates: [],
   });
 
-  const setPackage = (id: string) => {
-    setSubscription((prev) => ({ ...prev, packageId: id }));
+  const setPackage = (pkg: PackageData) => {
+    setSubscription((prev) => ({ ...prev, package: pkg }));
   };
 
   const setSchedule = (dayOfWeek: number, time: string, dates: string[]) => {

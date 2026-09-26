@@ -93,7 +93,8 @@ model Order {
   carTypeId     String
   service       Service      @relation(fields: [serviceId], references: [id])
   serviceId     String
-  extras        OrderExtra[]
+    extras        OrderExtra[]
+  extrasSnapshot Json?
   employee      Employee?    @relation(fields: [employeeId], references: [id])
   employeeId    String?
   plateNumber   String
