@@ -8,6 +8,9 @@ type LocationData = {
   address: string;
 } | null;
 
+type CarTypeData = { id: string; name: string } | null;
+type ServiceData = { id: string; name: string; price: number } | null;
+
 type CustomerData = {
   name: string;
   phone: string;
@@ -15,8 +18,8 @@ type CustomerData = {
 };
 
 type BookingData = {
-  carType: string | null;
-  service: string | null;
+  carType: CarTypeData;
+  service: ServiceData;
   extras: string[];
   location: LocationData;
   date: string | null;
@@ -26,8 +29,8 @@ type BookingData = {
 
 type BookingContextType = {
   booking: BookingData;
-  setCarType: (value: string) => void;
-  setService: (value: string) => void;
+  setCarType: (value: CarTypeData) => void;
+  setService: (value: ServiceData) => void;
   toggleExtra: (value: string) => void;
   setLocation: (value: LocationData) => void;
   setDate: (value: string) => void;
@@ -35,9 +38,7 @@ type BookingContextType = {
   setCustomer: (value: CustomerData) => void;
 };
 
-const BookingContext = createContext<BookingContextType | undefined>(
-  undefined
-);
+const BookingContext = createContext<BookingContextType | undefined>(undefined);
 
 export function BookingProvider({ children }: { children: ReactNode }) {
   const [booking, setBooking] = useState<BookingData>({
@@ -50,11 +51,11 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     customer: { name: "", phone: "", plate: "" },
   });
 
-  const setCarType = (value: string) => {
+  const setCarType = (value: CarTypeData) => {
     setBooking((prev) => ({ ...prev, carType: value }));
   };
 
-  const setService = (value: string) => {
+  const setService = (value: ServiceData) => {
     setBooking((prev) => ({ ...prev, service: value }));
   };
 
@@ -85,16 +86,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
 
   return (
     <BookingContext.Provider
-      value={{
-        booking,
-        setCarType,
-        setService,
-        toggleExtra,
-        setLocation,
-        setDate,
-        setTime,
-        setCustomer,
-      }}
+      value={{ booking, setCarType, setService, toggleExtra, setLocation, setDate, setTime, setCustomer }}
     >
       {children}
     </BookingContext.Provider>
