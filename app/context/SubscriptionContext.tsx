@@ -10,17 +10,24 @@ type PackageData = {
   price: number;
 } | null;
 
+type CustomerData = {
+  name: string;
+  phone: string;
+};
+
 type SubscriptionData = {
   package: PackageData;
   dayOfWeek: number | null;
   time: string | null;
   scheduleDates: string[];
+  customer: CustomerData;
 };
 
 type SubscriptionContextType = {
   subscription: SubscriptionData;
   setPackage: (pkg: PackageData) => void;
   setSchedule: (dayOfWeek: number, time: string, dates: string[]) => void;
+  setCustomer: (customer: CustomerData) => void;
 };
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
@@ -31,6 +38,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     dayOfWeek: null,
     time: null,
     scheduleDates: [],
+    customer: { name: "", phone: "" },
   });
 
   const setPackage = (pkg: PackageData) => {
@@ -41,8 +49,12 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     setSubscription((prev) => ({ ...prev, dayOfWeek, time, scheduleDates: dates }));
   };
 
+  const setCustomer = (customer: CustomerData) => {
+    setSubscription((prev) => ({ ...prev, customer }));
+  };
+
   return (
-    <SubscriptionContext.Provider value={{ subscription, setPackage, setSchedule }}>
+    <SubscriptionContext.Provider value={{ subscription, setPackage, setSchedule, setCustomer }}>
       {children}
     </SubscriptionContext.Provider>
   );

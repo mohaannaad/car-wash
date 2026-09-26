@@ -1,6 +1,8 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useSubscription } from "../../context/SubscriptionContext";
 
 const monthNames = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
@@ -10,8 +12,10 @@ function formatDate(key: string) {
   return `${d.getDate()} ${monthNames[d.getMonth()]}`;
 }
 
-export default function SubscriptionConfirmationPage() {
+function ConfirmationContent() {
   const { subscription } = useSubscription();
+  const searchParams = useSearchParams();
+  const subscriptionId = searchParams.get("subscriptionId");
 
   return (
     <main className="h-dvh flex flex-col items-center bg-bg-page overflow-hidden px-6 pt-16 pb-10 gap-6 text-center">
@@ -30,6 +34,13 @@ export default function SubscriptionConfirmationPage() {
         </p>
       </div>
 
+      {subscriptionId && (
+        <div className="bg-white rounded-2xl px-6 py-4 shadow-[0_2px_10px_rgba(16,24,40,0.05)] flex flex-col gap-1 shrink-0">
+          <span className="text-text-secondary text-xs">رقم الاشتراك</span>
+          <span className="text-primary text-lg font-extrabold" dir="ltr">#{subscriptionId.slice(-6).toUpperCase()}</span>
+        </div>
+      )}
+
       <div className="w-full bg-white rounded-2xl p-5 flex flex-col gap-3 shadow-[0_2px_10px_rgba(16,24,40,0.05)] overflow-y-auto">
         <span className="text-text-main text-sm font-bold">مواعيد الغسيل هذا الشهر</span>
         <div className="flex flex-wrap gap-2 justify-center">
@@ -43,5 +54,13 @@ export default function SubscriptionConfirmationPage() {
         العودة للرئيسية
       </Link>
     </main>
+  );
+}
+
+export default function SubscriptionConfirmationPage() {
+  return (
+    <Suspense fallback={<div className="h-dvh flex items-center justify-center bg-bg-page"><p className="text-text-secondary">جاري التحميل...</p></div>}>
+      <ConfirmationContent />
+    </Suspense>
   );
 }
