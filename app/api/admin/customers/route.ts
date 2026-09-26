@@ -8,13 +8,13 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     });
 
-    const formatted = customers.map((customer) => ({
+    const formatted = customers.map((customer: { id: string; name: string; phone: string; createdAt: Date; orders: { totalPrice: number }[] }) => ({
       id: customer.id,
       name: customer.name,
       phone: customer.phone,
       createdAt: customer.createdAt,
       ordersCount: customer.orders.length,
-      totalSpent: customer.orders.reduce((sum, order) => sum + order.totalPrice, 0),
+      totalSpent: customer.orders.reduce((sum: number, order: { totalPrice: number }) => sum + order.totalPrice, 0),
     }));
 
     return NextResponse.json(formatted);
