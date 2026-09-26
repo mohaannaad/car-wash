@@ -1,7 +1,8 @@
 "use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 const navItems = [
   {
@@ -104,6 +105,17 @@ const navItems = [
 ];
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await fetch("/api/admin/auth/logout", { method: "POST" });
+    router.push("/admin/login");
+    router.refresh();
+  };
+
+  if (pathname === "/admin/login") {
+    return <>{children}</>;
+  }
 
   return (
     <div className="min-h-screen flex bg-[#F4F7F8]">
@@ -142,16 +154,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 })}
         </nav>
 
-        {/* أسفل الـ Sidebar */}
-        <div className="px-6 py-5 border-t border-[#EEF2F3] flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold shrink-0">
-            أد
-          </div>
-          <div className="flex flex-col">
-            <span className="text-text-main text-xs font-bold">الأدمن</span>
-            <span className="text-text-secondary text-[11px]">admin@carwash.com</span>
-          </div>
-        </div>
+       {/* أسفل الـ Sidebar */}
+<div className="px-6 py-5 border-t border-[#EEF2F3] flex items-center gap-3">
+  <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold shrink-0">
+    أد
+  </div>
+  <div className="flex flex-col flex-1 min-w-0">
+    <span className="text-text-main text-xs font-bold">الأدمن</span>
+    <span className="text-text-secondary text-[11px] truncate">admin@carwash.com</span>
+  </div>
+  <button onClick={handleLogout} title="تسجيل الخروج" className="shrink-0 text-text-secondary hover:text-red-500 transition-colors">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <path d="M16 17l5-5-5-5" />
+      <path d="M21 12H9" />
+    </svg>
+  </button>
+</div>
       </aside>
 
       {/* المساحة الرئيسية */}
