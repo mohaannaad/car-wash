@@ -20,3 +20,16 @@ export async function PATCH(
     return NextResponse.json({ error: "فشل في التحديث" }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    await prisma.order.delete({ where: { id } });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json({ error: "فشل في الحذف" }, { status: 500 });
+  }
+}

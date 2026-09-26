@@ -7,6 +7,7 @@ type Order = {
   customer: { name: string; phone: string };
   carType: { name: string };
   service: { name: string };
+  locationText: string;
   scheduledDate: string;
   scheduledTime: string;
   totalPrice: number;
@@ -57,6 +58,11 @@ export default function OrdersPage() {
       body: JSON.stringify({ status }),
     });
   };
+const handleDelete = async (id: string) => {
+  if (!confirm("متأكد إنك عايز تحذف الطلب ده نهائيًا؟")) return;
+  setOrders((prev) => prev.filter((o) => o.id !== id));
+  await fetch(`/api/admin/orders/${id}`, { method: "DELETE" });
+};
 
   return (
     <div className="p-8 flex flex-col gap-7">
@@ -78,9 +84,11 @@ export default function OrdersPage() {
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold">العميل</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold">السيارة</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold">الخدمة</th>
+                <th className="px-6 py-3 text-text-secondary text-xs font-bold">العنوان</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold">الموعد</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold">السعر</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold">الحالة</th>
+<th className="px-6 py-3 text-text-secondary text-xs font-bold">إجراءات</th>
               </tr>
             </thead>
             <tbody>
@@ -95,6 +103,9 @@ export default function OrdersPage() {
                   </td>
                   <td className="px-6 py-4 text-text-secondary text-sm">{order.carType.name}</td>
                   <td className="px-6 py-4 text-text-secondary text-sm">{order.service.name}</td>
+                  <td className="px-6 py-4 text-text-secondary text-xs max-w-[200px] truncate" title={order.locationText}>
+  {order.locationText}
+</td>
                   <td className="px-6 py-4 text-text-secondary text-sm">
                     {new Date(order.scheduledDate).toLocaleDateString("ar-EG", { day: "numeric", month: "short" })} - {order.scheduledTime}
                   </td>
@@ -110,6 +121,14 @@ export default function OrdersPage() {
                       ))}
                     </select>
                   </td>
+                  <td className="px-6 py-4">
+  <button
+    onClick={() => handleDelete(order.id)}
+    className="text-red-500 text-xs font-bold hover:underline"
+  >
+    حذف
+  </button>
+</td>
                 </tr>
               ))}
             </tbody>
