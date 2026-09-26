@@ -1,10 +1,11 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useBooking } from "../../context/BookingContext";
 
-export default function ConfirmationStep() {
+function ConfirmationContent() {
   const { booking } = useBooking();
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
@@ -39,5 +40,13 @@ export default function ConfirmationStep() {
         العودة للرئيسية
       </Link>
     </main>
+  );
+}
+
+export default function ConfirmationStep() {
+  return (
+    <Suspense fallback={<div className="h-dvh flex items-center justify-center bg-bg-page"><p className="text-text-secondary">جاري التحميل...</p></div>}>
+      <ConfirmationContent />
+    </Suspense>
   );
 }
