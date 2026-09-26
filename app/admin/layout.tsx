@@ -48,6 +48,16 @@ const navItems = [
     ),
   },
   {
+    href: "/admin/employees",
+    label: "الموظفين",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="4" y="4" width="16" height="16" rx="3" />
+        <path d="M8 4v16M4 10h16" />
+      </svg>
+    ),
+  },
+  {
     href: "/admin/car-types",
     label: "أنواع السيارات",
     icon: (
