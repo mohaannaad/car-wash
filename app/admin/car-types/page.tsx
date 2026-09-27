@@ -77,14 +77,20 @@ export default function CarTypesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("متأكد إنك عايز تحذف نوع السيارة ده؟")) return;
-    try {
-      await fetch(`/api/admin/car-types/${id}`, { method: "DELETE" });
-      await loadCarTypes();
-    } catch {
-      setError("حصل خطأ في الحذف");
+  if (!confirm("متأكد إنك عايز تحذف نوع السيارة ده؟")) return;
+  try {
+    const res = await fetch(`/api/admin/car-types/${id}`, { method: "DELETE" });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error || "حصل خطأ في الحذف");
+      return;
     }
-  };
+    setError("");
+    await loadCarTypes();
+  } catch {
+    setError("حصل خطأ في الحذف");
+  }
+};
 
   return (
     <div className="p-8 flex flex-col gap-7">

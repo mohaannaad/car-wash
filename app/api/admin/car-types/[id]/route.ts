@@ -35,7 +35,16 @@ export async function DELETE(
     const { id } = await params;
     await prisma.carType.delete({ where: { id } });
     return NextResponse.json({ success: true });
-  } catch (error) {
-    return NextResponse.json({ error: "فشل في الحذف" }, { status: 500 });
+  } catch (error: any) {
+    if (error.code === "P2025") {
+      return NextResponse.json({ error: "نوع السيارة ده مش موجود أصلًا، جرّب تحدّث الصفحة" }, { status: 404 });
+    }
+    if (error.code === "P2003") {
+      return NextResponse.json(
+        { error: "مينفعش تحذف النوع ده لأنه مرتبط بطلبات موجودة في الداتابيز، استخدم زرار الإيقاف بدل الحذف" },
+        { status: 409 }
+      );
+    }
+    return NextResponse.json({ error: "فشل في الحذف، حاول تاني" }, { status: 500 });
   }
 }
