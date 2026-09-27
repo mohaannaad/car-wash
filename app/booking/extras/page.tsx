@@ -36,7 +36,7 @@ export default function ExtrasStep() {
     <main className="h-dvh flex flex-col bg-bg-page overflow-hidden">
       <div className="px-6 pt-8 pb-5 flex flex-col gap-1 shrink-0">
         <h1 className="text-text-main text-2xl font-extrabold">خدمات إضافية</h1>
-        <p className="text-text-secondary text-sm">اختر أي خدمات إضافية حابب تضيفها لطلبك (اختياري)</p>
+        <p className="text-text-secondary text-sm">اختر أي خدمات إضافية ترغب في إضافتها لطلبك (اختياري)</p>
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-3.5 px-5">

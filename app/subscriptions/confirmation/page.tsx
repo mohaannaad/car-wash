@@ -30,7 +30,7 @@ function ConfirmationContent() {
       <div className="flex flex-col gap-2 shrink-0">
         <h1 className="text-text-main text-2xl font-extrabold">تم تفعيل اشتراكك بنجاح</h1>
         <p className="text-text-secondary text-sm">
-          اشتراكك في <span className="font-bold text-text-main">{subscription.package?.name || "-"}</span> شغال دلوقتي
+         اشتراكك في <span className="font-bold text-text-main">{subscription.package?.name || "-"}</span> نشط الآن
         </p>
       </div>
 

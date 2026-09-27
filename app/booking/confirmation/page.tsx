@@ -23,7 +23,7 @@ function ConfirmationContent() {
       <div className="flex flex-col gap-2">
         <h1 className="text-text-main text-2xl font-extrabold">تم إرسال طلبك بنجاح</h1>
         <p className="text-text-secondary text-sm leading-relaxed max-w-xs">
-          فريقنا هيتواصل معاك على الرقم{" "}
+        سيتواصل فريقنا معك على الرقم{" "}
           <span className="font-bold text-text-main" dir="ltr">{booking.customer.phone || "المسجل"}</span>{" "}
           لتأكيد الموعد
         </p>

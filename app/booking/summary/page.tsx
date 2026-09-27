@@ -27,7 +27,7 @@ export default function SummaryStep() {
 
   const handleConfirm = async () => {
     if (!booking.carType || !booking.service || !booking.location || !booking.date || !booking.time) {
-      setError("في بيانات ناقصة في طلبك، ارجع للخطوات السابقة وتأكد منها");
+      setError("توجد بيانات ناقصة في طلبك، عُد إلى الخطوات السابقة وتأكد منها");
       return;
     }
     setSubmitting(true);
@@ -52,7 +52,7 @@ export default function SummaryStep() {
       const order = await res.json();
       router.push(`/booking/confirmation?orderId=${order.id}`);
     } catch {
-      setError("حصل خطأ في إرسال الطلب، حاول تاني");
+      setError("حدث خطأ أثناء إرسال الطلب، حاول مرة أخرى");
     } finally {
       setSubmitting(false);
     }

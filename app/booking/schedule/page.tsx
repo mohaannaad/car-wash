@@ -53,7 +53,7 @@ export default function ScheduleStep() {
       {/* العنوان */}
       <div className="px-6 pt-8 pb-5 flex flex-col gap-1 shrink-0">
         <h1 className="text-text-main text-2xl font-extrabold">التاريخ والوقت</h1>
-        <p className="text-text-secondary text-sm">اختر الموعد اللي يناسبك</p>
+        <p className="text-text-secondary text-sm">اختر الموعد الذي يناسبك</p>
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-6 px-5">

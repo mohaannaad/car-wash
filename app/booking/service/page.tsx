@@ -39,7 +39,7 @@ export default function ServiceStep() {
     <main className="h-dvh flex flex-col bg-bg-page overflow-hidden">
       <div className="px-6 pt-8 pb-5 flex flex-col gap-1 shrink-0">
         <h1 className="text-text-main text-2xl font-extrabold">الباقات</h1>
-        <p className="text-text-secondary text-sm">اختر الباقة اللي تناسب سيارتك، وإحنا هنتولى الباقي</p>
+        <p className="text-text-secondary text-sm">اختر الباقة التي تناسب سيارتك، وسنتولى الباقي</p>
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-3.5 px-5">

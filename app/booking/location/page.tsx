@@ -31,10 +31,10 @@ export default function LocationStep() {
       if (data.features && data.features[0]) {
         setAddress(data.features[0].place_name);
       } else {
-        setAddress("تعذّر تحديد العنوان، بس الموقع محفوظ");
+        setAddress("تعذّر تحديد العنوان، ولكن الموقع محفوظ");
       }
     } catch {
-      setAddress("تعذّر تحديد العنوان، بس الموقع محفوظ");
+      setAddress("تعذّر تحديد العنوان، ولكن الموقع محفوظ");
     }
   }, []);
 
@@ -77,7 +77,7 @@ export default function LocationStep() {
       {/* العنوان */}
       <div className="px-6 pt-8 pb-4 flex flex-col gap-1 shrink-0">
         <h1 className="text-text-main text-2xl font-extrabold">موقع السيارة</h1>
-        <p className="text-text-secondary text-sm">حدد المكان اللي هنيجي نغسل فيه السيارة</p>
+        <p className="text-text-secondary text-sm">حدد المكان الذي سنقوم بغسل السيارة فيه</p>
       </div>
 
       {/* الخريطة - تاخد كل المساحة المتبقية */}

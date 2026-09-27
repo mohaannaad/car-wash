@@ -23,7 +23,7 @@ export default function SubscriptionCustomerStep() {
       return;
     }
     if (!isPhoneValid) {
-      setError("رقم الجوال لازم يبدأ بـ 05 ويكون 10 أرقام");
+      setError("يجب أن يبدأ رقم الجوال بـ 05 ويتكون من 10 أرقام");
       return;
     }
     if (!subscription.package || subscription.dayOfWeek === null || !subscription.time) {
@@ -50,7 +50,7 @@ export default function SubscriptionCustomerStep() {
       setCustomer({ name: name.trim(), phone });
       router.push(`/subscriptions/confirmation?subscriptionId=${created.id}`);
     } catch {
-      setError("حصل خطأ في تفعيل الاشتراك، حاول تاني");
+      setError("حدث خطأ أثناء تفعيل الاشتراك، حاول مرة أخرى");
     } finally {
       setSubmitting(false);
     }
@@ -60,7 +60,7 @@ export default function SubscriptionCustomerStep() {
     <main className="h-dvh flex flex-col bg-bg-page overflow-hidden">
       <div className="px-6 pt-8 pb-5 flex flex-col gap-1 shrink-0">
         <h1 className="text-text-main text-2xl font-extrabold">بياناتك</h1>
-        <p className="text-text-secondary text-sm">هنحتاج بياناتك عشان نفعّل اشتراكك ونتواصل معاك</p>
+        <p className="text-text-secondary text-sm">سنحتاج إلى بياناتك لتفعيل اشتراكك والتواصل معك</p>
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-5 px-5">

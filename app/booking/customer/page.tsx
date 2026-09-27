@@ -24,11 +24,11 @@ export default function CustomerStep() {
       return;
     }
     if (!isPhoneValid) {
-      setError("رقم الجوال لازم يبدأ بـ 05 ويكون 10 أرقام");
+      setError("يجب أن يبدأ رقم الجوال بـ 05 ويتكون من 10 أرقام");
       return;
     }
     if (!isPlateValid) {
-      setError("من فضلك اكتب رقم لوحة السيارة");
+     setError("من فضلك أدخل رقم لوحة السيارة");
       return;
     }
     setError("");
@@ -41,7 +41,7 @@ export default function CustomerStep() {
       {/* العنوان */}
       <div className="px-6 pt-8 pb-5 flex flex-col gap-1 shrink-0">
         <h1 className="text-text-main text-2xl font-extrabold">بياناتك</h1>
-        <p className="text-text-secondary text-sm">هنحتاج بياناتك عشان نتواصل معاك بخصوص الطلب</p>
+        <p className="text-text-secondary text-sm">سنحتاج إلى بياناتك للتواصل معك بخصوص الطلب</p>
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-5 px-5">
