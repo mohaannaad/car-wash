@@ -1,19 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAdminToken } from "./lib/auth";
 
 const PUBLIC_PATHS = ["/admin/login", "/api/admin/auth/login", "/api/admin/auth/logout"];
 
-export async function middleware(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (PUBLIC_PATHS.some((path) => pathname === path)) {
     return NextResponse.next();
   }
 
-  const token = request.cookies.get("admin_token")?.value;
-  const payload = token ? await verifyAdminToken(token) : null;
+  const session = request.cookies.get("admin_session")?.value;
 
-  if (!payload) {
+  if (session !== "authenticated") {
     if (pathname.startsWith("/api/admin")) {
       return NextResponse.json({ error: "غير مصرح لك" }, { status: 401 });
     }

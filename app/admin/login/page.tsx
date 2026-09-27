@@ -25,8 +25,7 @@ export default function AdminLoginPage() {
         setError(data.error || "حصل خطأ");
         return;
       }
-      router.push("/admin");
-      router.refresh();
+      window.location.href = "/admin";
     } catch {
       setError("حصل خطأ في الاتصال، حاول تاني");
     } finally {
@@ -57,6 +56,7 @@ export default function AdminLoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleLogin()}
               dir="ltr"
+              autoComplete="off"
               placeholder="admin@carwash.com"
               className="bg-[#F4F7F8] rounded-xl px-4 py-3 text-sm outline-none placeholder:text-[#98A2B3] text-right"
             />
@@ -69,6 +69,7 @@ export default function AdminLoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleLogin()}
               dir="ltr"
+              autoComplete="off"
               placeholder="••••••••"
               className="bg-[#F4F7F8] rounded-xl px-4 py-3 text-sm outline-none placeholder:text-[#98A2B3] text-right"
             />

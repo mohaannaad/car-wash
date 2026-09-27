@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useBooking } from "../context/BookingContext";
 
-type CarType = { id: string; name: string };
+type CarType = { id: string; name: string; imageUrl: string | null };
 
 export default function CarTypeStep() {
   const router = useRouter();
@@ -24,7 +24,7 @@ export default function CarTypeStep() {
   const handleNext = () => {
     const selected = carTypes.find((c) => c.id === selectedId);
     if (!selected) return;
-    setCarType(selected);
+    setCarType({ id: selected.id, name: selected.name });
     router.push("/booking/service");
   };
 
@@ -35,7 +35,7 @@ export default function CarTypeStep() {
         <p className="text-text-secondary text-sm">قم باختيار نوع سيارتك</p>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto grid grid-cols-2 gap-3.5 px-5">
+      <div className="flex-1 min-h-0 overflow-y-auto grid grid-cols-2 auto-rows-min content-start items-start gap-3.5 px-5">
         {loading ? (
           <p className="col-span-2 text-center text-text-secondary text-sm py-8">جاري التحميل...</p>
         ) : carTypes.length === 0 ? (
@@ -60,14 +60,20 @@ export default function CarTypeStep() {
                     </svg>
                   </span>
                 )}
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${isSelected ? "bg-primary" : "bg-primary-light"}`}>
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={isSelected ? "#FFFFFF" : "#19B9C6"} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 15.5V12l1.6-4a2 2 0 0 1 1.9-1.3h9a2 2 0 0 1 1.9 1.3l1.6 4v3.5" />
-                    <path d="M1.5 15.5h21" />
-                    <circle cx="7" cy="16" r="1.5" />
-                    <circle cx="17" cy="16" r="1.5" />
-                  </svg>
-                </div>
+
+                {car.imageUrl ? (
+                  <img src={car.imageUrl} alt={car.name} className="w-16 h-16 rounded-2xl object-cover" />
+                ) : (
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${isSelected ? "bg-primary" : "bg-primary-light"}`}>
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={isSelected ? "#FFFFFF" : "#19B9C6"} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 15.5V12l1.6-4a2 2 0 0 1 1.9-1.3h9a2 2 0 0 1 1.9 1.3l1.6 4v3.5" />
+                      <path d="M1.5 15.5h21" />
+                      <circle cx="7" cy="16" r="1.5" />
+                      <circle cx="17" cy="16" r="1.5" />
+                    </svg>
+                  </div>
+                )}
+
                 <span className={`font-bold text-base ${isSelected ? "text-primary" : "text-text-main"}`}>{car.name}</span>
               </button>
             );
