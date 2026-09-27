@@ -61,18 +61,20 @@ export default function CarTypeStep() {
                   </span>
                 )}
 
-               {car.imageUrl ? (
-  <img src={car.imageUrl} alt={car.name} className="w-full h-20 object-contain" />
-) : (
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${isSelected ? "bg-primary" : "bg-primary-light"}`}>
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={isSelected ? "#FFFFFF" : "#19B9C6"} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M3 15.5V12l1.6-4a2 2 0 0 1 1.9-1.3h9a2 2 0 0 1 1.9 1.3l1.6 4v3.5" />
-                      <path d="M1.5 15.5h21" />
-                      <circle cx="7" cy="16" r="1.5" />
-                      <circle cx="17" cy="16" r="1.5" />
-                    </svg>
-                  </div>
-                )}
+               <div className="w-full h-20 flex items-center justify-center">
+  {car.imageUrl ? (
+    <img src={car.imageUrl} alt={car.name} className="w-full h-full object-contain" />
+  ) : (
+    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${isSelected ? "bg-primary" : "bg-primary-light"}`}>
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={isSelected ? "#FFFFFF" : "#19B9C6"} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 15.5V12l1.6-4a2 2 0 0 1 1.9-1.3h9a2 2 0 0 1 1.9 1.3l1.6 4v3.5" />
+        <path d="M1.5 15.5h21" />
+        <circle cx="7" cy="16" r="1.5" />
+        <circle cx="17" cy="16" r="1.5" />
+      </svg>
+    </div>
+  )}
+</div>
 
                 <span className={`font-bold text-base ${isSelected ? "text-primary" : "text-text-main"}`}>{car.name}</span>
               </button>
