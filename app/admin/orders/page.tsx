@@ -6,7 +6,8 @@ type Order = {
   id: string;
   customer: { name: string; phone: string };
   carType: { name: string };
-  service: { name: string };
+    service: { name: string };
+  extrasSnapshot: { id: string; name: string; price: number }[] | null;
   locationText: string;
   scheduledDate: string;
   scheduledTime: string;
@@ -83,7 +84,8 @@ const handleDelete = async (id: string) => {
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold">رقم الطلب</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold">العميل</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold">السيارة</th>
-                <th className="px-6 py-3 text-text-secondary text-xs font-bold">الخدمة</th>
+                                <th className="px-6 py-3 text-text-secondary text-xs font-bold">الخدمة</th>
+                <th className="px-6 py-3 text-text-secondary text-xs font-bold">الخدمات الإضافية</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold">العنوان</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold">الموعد</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold">السعر</th>
@@ -102,7 +104,20 @@ const handleDelete = async (id: string) => {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-text-secondary text-sm">{order.carType.name}</td>
-                  <td className="px-6 py-4 text-text-secondary text-sm">{order.service.name}</td>
+                                    <td className="px-6 py-4 text-text-secondary text-sm">{order.service.name}</td>
+                  <td className="px-6 py-4">
+                    {order.extrasSnapshot && order.extrasSnapshot.length > 0 ? (
+                      <div className="flex flex-col gap-1">
+                        {order.extrasSnapshot.map((extra) => (
+                          <span key={extra.id} className="text-text-secondary text-xs">
+                            {extra.name} <span className="text-text-main font-bold">({extra.price} ر.س)</span>
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-text-secondary text-xs">لا توجد</span>
+                    )}
+                  </td>
                   <td className="px-6 py-4 text-text-secondary text-xs max-w-[200px] truncate" title={order.locationText}>
   {order.locationText}
 </td>
