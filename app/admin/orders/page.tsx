@@ -6,7 +6,8 @@ type Order = {
   id: string;
   customer: { name: string; phone: string };
   carType: { name: string };
-    service: { name: string };
+      service: { name: string };
+  plateNumber: string;
   extrasSnapshot: { id: string; name: string; price: number }[] | null;
   locationText: string;
   scheduledDate: string;
@@ -83,7 +84,8 @@ const handleDelete = async (id: string) => {
               <tr className="text-right border-b border-[#EEF2F3]">
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold">رقم الطلب</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold">العميل</th>
-                <th className="px-6 py-3 text-text-secondary text-xs font-bold">السيارة</th>
+                                <th className="px-6 py-3 text-text-secondary text-xs font-bold">السيارة</th>
+                <th className="px-6 py-3 text-text-secondary text-xs font-bold">رقم اللوحة</th>
                                 <th className="px-6 py-3 text-text-secondary text-xs font-bold">الخدمة</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold">الخدمات الإضافية</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold">العنوان</th>
@@ -103,7 +105,8 @@ const handleDelete = async (id: string) => {
                       <span className="text-text-secondary text-xs" dir="ltr">{order.customer.phone}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-text-secondary text-sm">{order.carType.name}</td>
+                                    <td className="px-6 py-4 text-text-secondary text-sm">{order.carType.name}</td>
+                  <td className="px-6 py-4 text-text-main text-sm font-bold" dir="ltr">{order.plateNumber}</td>
                                     <td className="px-6 py-4 text-text-secondary text-sm">{order.service.name}</td>
                   <td className="px-6 py-4">
                     {order.extrasSnapshot && order.extrasSnapshot.length > 0 ? (
