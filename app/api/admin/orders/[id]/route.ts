@@ -8,11 +8,14 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { status } = body;
+    const { status, employeeId } = body;
 
     const order = await prisma.order.update({
       where: { id },
-      data: { status },
+      data: {
+        ...(status !== undefined && { status }),
+        ...(employeeId !== undefined && { employeeId: employeeId || null }),
+      },
     });
 
     return NextResponse.json(order);

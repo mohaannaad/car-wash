@@ -69,6 +69,7 @@ model Employee {
   name      String
   phone     String   @unique
   role      String
+  password  String?
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   orders    Order[]

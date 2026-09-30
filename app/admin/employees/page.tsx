@@ -16,7 +16,7 @@ export default function EmployeesPage() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const [form, setForm] = useState({ name: "", phone: "", role: "" });
+  const [form, setForm] = useState({ name: "", phone: "", role: "", password: "" });
 
   const loadEmployees = async () => {
     setLoading(true);
@@ -24,7 +24,7 @@ export default function EmployeesPage() {
       const res = await fetch("/api/admin/employees");
       setEmployees(await res.json());
     } catch {
-      setError("حصل خطأ في تحميل البيانات");
+      setError("حدث خطأ أثناء تحميل البيانات");
     } finally {
       setLoading(false);
     }
@@ -35,7 +35,7 @@ export default function EmployeesPage() {
   }, []);
 
   const handleAdd = async () => {
-    if (!form.name.trim() || !form.phone.trim() || !form.role.trim()) return;
+    if (!form.name.trim() || !form.phone.trim() || !form.role.trim() || !form.password.trim()) return;
     setSubmitting(true);
     setError("");
     try {
@@ -48,10 +48,10 @@ export default function EmployeesPage() {
         const data = await res.json();
         throw new Error(data.error || "فشل في الإضافة");
       }
-      setForm({ name: "", phone: "", role: "" });
+      setForm({ name: "", phone: "", role: "", password: "" });
       await loadEmployees();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "حصل خطأ في الإضافة");
+      setError(err instanceof Error ? err.message : "حدث خطأ أثناء الإضافة");
     } finally {
       setSubmitting(false);
     }
@@ -66,17 +66,37 @@ export default function EmployeesPage() {
       });
       await loadEmployees();
     } catch {
-      setError("حصل خطأ في التعديل");
+      setError("حدث خطأ أثناء التعديل");
+    }
+  };
+
+  const handleResetPassword = async (id: string, name: string) => {
+    const newPassword = window.prompt(`اكتب باسورد جديد للموظف "${name}" (6 أحرف على الأقل):`);
+    if (!newPassword) return;
+    if (newPassword.trim().length < 6) {
+      alert("الباسورد قصير جدًا، لازم 6 أحرف على الأقل");
+      return;
+    }
+    try {
+      const res = await fetch(`/api/admin/employees/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: newPassword.trim() }),
+      });
+      if (!res.ok) throw new Error();
+      alert("تم تغيير الباسورد بنجاح");
+    } catch {
+      setError("حدث خطأ أثناء تغيير الباسورد");
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("متأكد إنك عايز تحذف الموظف ده؟")) return;
+    if (!confirm("هل أنت متأكد من رغبتك في حذف الموظف؟")) return;
     try {
       await fetch(`/api/admin/employees/${id}`, { method: "DELETE" });
       await loadEmployees();
     } catch {
-      setError("حصل خطأ في الحذف");
+      setError("حدث خطأ أثناء الحذف");
     }
   };
 
@@ -84,12 +104,14 @@ export default function EmployeesPage() {
     <div className="p-8 flex flex-col gap-7">
       <div className="flex flex-col gap-1">
         <h1 className="text-text-main text-2xl font-extrabold">الموظفين</h1>
-        <p className="text-text-secondary text-sm">إدارة فريق العمل المسؤول عن تنفيذ الطلبات</p>
+        <p className="text-text-secondary text-sm">
+          إدارة فريق العمل، وحسابات دخولهم على{" "}
+          <span dir="ltr" className="font-bold text-primary">washksa.com/staff</span>
+        </p>
       </div>
 
-      {/* نموذج الإضافة */}
       <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_rgba(16,24,40,0.05)] flex flex-col gap-3">
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-4 gap-3">
           <input
             type="text"
             value={form.name}
@@ -102,7 +124,7 @@ export default function EmployeesPage() {
             dir="ltr"
             value={form.phone}
             onChange={(e) => setForm({ ...form, phone: e.target.value })}
-            placeholder="رقم الجوال"
+            placeholder="رقم الجوال (اسم الدخول)"
             className="bg-[#F4F7F8] rounded-xl px-4 py-3 text-sm outline-none placeholder:text-[#98A2B3] text-right"
           />
           <input
@@ -112,28 +134,35 @@ export default function EmployeesPage() {
             placeholder="الوظيفة (مثال: فني غسيل)"
             className="bg-[#F4F7F8] rounded-xl px-4 py-3 text-sm outline-none placeholder:text-[#98A2B3]"
           />
+          <input
+            type="text"
+            dir="ltr"
+            value={form.password}
+            onChange={(e) => setForm({ ...form, password: e.target.value })}
+            placeholder="باسورد الدخول"
+            className="bg-[#F4F7F8] rounded-xl px-4 py-3 text-sm outline-none placeholder:text-[#98A2B3] text-right"
+          />
         </div>
         <button
           onClick={handleAdd}
-          disabled={submitting || !form.name.trim() || !form.phone.trim() || !form.role.trim()}
+          disabled={submitting || !form.name.trim() || !form.phone.trim() || !form.role.trim() || !form.password.trim()}
           className={`self-start px-6 py-3 rounded-xl font-bold text-white text-sm transition-colors ${
-            submitting || !form.name.trim() || !form.phone.trim() || !form.role.trim()
+            submitting || !form.name.trim() || !form.phone.trim() || !form.role.trim() || !form.password.trim()
               ? "bg-disabled cursor-not-allowed"
               : "bg-primary"
           }`}
         >
-          {submitting ? "جاري الإضافة..." : "+ إضافة موظف"}
+          {submitting ? "جارٍ الإضافة..." : "+ إضافة موظف"}
         </button>
       </div>
 
       {error && <p className="text-red-500 text-sm font-medium">{error}</p>}
 
-      {/* جدول الموظفين */}
       <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(16,24,40,0.05)] overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-text-secondary text-sm">جاري التحميل...</div>
+          <div className="p-8 text-center text-text-secondary text-sm">جارٍ التحميل...</div>
         ) : employees.length === 0 ? (
-          <div className="p-8 text-center text-text-secondary text-sm">مفيش موظفين مضافين لسه</div>
+          <div className="p-8 text-center text-text-secondary text-sm">لا يوجد موظفون مضافون بعد</div>
         ) : (
           <table className="w-full">
             <thead>
@@ -161,11 +190,11 @@ export default function EmployeesPage() {
                       {employee.isActive ? "شغال" : "متوقف"}
                     </button>
                   </td>
-                  <td className="px-6 py-4">
-                    <button
-                      onClick={() => handleDelete(employee.id)}
-                      className="text-red-500 text-xs font-bold hover:underline"
-                    >
+                  <td className="px-6 py-4 flex items-center gap-3">
+                    <button onClick={() => handleResetPassword(employee.id, employee.name)} className="text-primary text-xs font-bold hover:underline">
+                      تغيير الباسورد
+                    </button>
+                    <button onClick={() => handleDelete(employee.id)} className="text-red-500 text-xs font-bold hover:underline">
                       حذف
                     </button>
                   </td>

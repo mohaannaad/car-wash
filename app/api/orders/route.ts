@@ -1,6 +1,26 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
 
+async function findLeastBusyEmployee() {
+  const activeEmployees = await prisma.employee.findMany({ where: { isActive: true } });
+  if (activeEmployees.length === 0) return null;
+
+  const loads = await Promise.all(
+    activeEmployees.map(async (emp) => {
+      const openOrders = await prisma.order.count({
+        where: {
+          employeeId: emp.id,
+          status: { notIn: ["COMPLETED", "CANCELLED"] },
+        },
+      });
+      return { id: emp.id, openOrders };
+    })
+  );
+
+  loads.sort((a, b) => a.openOrders - b.openOrders);
+  return loads[0].id;
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -16,11 +36,14 @@ export async function POST(request: Request) {
       create: { name: customer.name, phone: customer.phone },
     });
 
+    const assignedEmployeeId = await findLeastBusyEmployee();
+
     const order = await prisma.order.create({
       data: {
         customerId: customerRecord.id,
         carTypeId,
         serviceId,
+        employeeId: assignedEmployeeId ?? undefined,
         plateNumber,
         locationLat: location.lat,
         locationLng: location.lng,

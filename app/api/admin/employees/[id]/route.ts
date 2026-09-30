@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 import { prisma } from "../../../../../lib/prisma";
 
 export async function PATCH(
@@ -8,19 +9,22 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { name, phone, role, isActive } = body;
+    const { name, phone, role, isActive, password } = body;
 
-    const employee = await prisma.employee.update({
-      where: { id },
-      data: {
-        ...(name !== undefined && { name: name.trim() }),
-        ...(phone !== undefined && { phone: phone.trim() }),
-        ...(role !== undefined && { role: role.trim() }),
-        ...(isActive !== undefined && { isActive }),
-      },
-    });
+    const data: Record<string, unknown> = {
+      ...(name !== undefined && { name: name.trim() }),
+      ...(phone !== undefined && { phone: phone.trim() }),
+      ...(role !== undefined && { role: role.trim() }),
+      ...(isActive !== undefined && { isActive }),
+    };
 
-    return NextResponse.json(employee);
+    if (password) {
+      data.password = await bcrypt.hash(password, 10);
+    }
+
+    const employee = await prisma.employee.update({ where: { id }, data });
+    const { password: _pw, ...safeEmployee } = employee;
+    return NextResponse.json(safeEmployee);
   } catch (error) {
     return NextResponse.json({ error: "فشل في التعديل" }, { status: 500 });
   }
