@@ -93,7 +93,7 @@ model Order {
   carTypeId     String
   service       Service      @relation(fields: [serviceId], references: [id])
   serviceId     String
-    extras        OrderExtra[]
+  extras        OrderExtra[]
   extrasSnapshot Json?
   employee      Employee?    @relation(fields: [employeeId], references: [id])
   employeeId    String?
@@ -105,6 +105,7 @@ model Order {
   scheduledTime String
   totalPrice    Int
   status        OrderStatus  @default(PENDING)
+  viewed        Boolean      @default(false)
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 }

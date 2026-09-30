@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const navItems = [
   {
@@ -24,6 +25,15 @@ const navItems = [
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="5" width="18" height="16" rx="2" />
         <path d="M3 10h18M8 3v4M16 3v4" />
+      </svg>
+    ),
+  },
+  {
+    href: "/admin/subscriptions",
+    label: "الاشتراكات",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2l2.4 6.6L21 10l-5 4.3L17.4 21 12 17.6 6.6 21 8 14.3 3 10l6.6-1.4z" />
       </svg>
     ),
   },
@@ -103,15 +113,35 @@ const navItems = [
     ),
   },
 ];
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [unseenCount, setUnseenCount] = useState(0);
 
   const handleLogout = async () => {
     await fetch("/api/admin/auth/logout", { method: "POST" });
     router.push("/admin/login");
     router.refresh();
   };
+
+  useEffect(() => {
+    if (pathname === "/admin/login") return;
+
+    const checkUnseen = async () => {
+      try {
+        const res = await fetch("/api/admin/orders/unseen-count");
+        const data = await res.json();
+        setUnseenCount(data.count ?? 0);
+      } catch {
+        // تجاهل أي خطأ مؤقت في الشبكة
+      }
+    };
+
+    checkUnseen();
+    const interval = setInterval(checkUnseen, 10000);
+    return () => clearInterval(interval);
+  }, [pathname]);
 
   if (pathname === "/admin/login") {
     return <>{children}</>;
@@ -124,7 +154,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* اللوجو */}
         <div className="px-6 py-7 border-b border-[#EEF2F3] flex items-center gap-3">
           <div className="w-11 h-11 rounded-xl bg-primary-light flex items-center justify-center shrink-0">
-            {/* هنستبدل ده باللوجو الحقيقي لما يوصلنا */}
             <Image src="/images/logo.png" alt="غسلة ولمعة" width={32} height={32} className="h-auto w-auto max-w-[28px]" />
           </div>
           <div className="flex flex-col">
@@ -135,42 +164,48 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* روابط التنقل */}
         <nav className="flex-1 px-3 py-5 flex flex-col gap-1">
-         {navItems.map((item) => {
-  const isActive = item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
-  return (
-    <Link
-      key={item.href}
-      href={item.href}
-      className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-colors text-sm font-bold ${
-        isActive
-          ? "bg-primary-light text-primary"
-          : "text-text-secondary hover:bg-primary-light hover:text-primary"
-      }`}
-    >
-      {item.icon}
-      {item.label}
-    </Link>
-  );
-})}
+          {navItems.map((item) => {
+            const isActive = item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
+            const showBadge = item.href === "/admin/orders" && unseenCount > 0;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-colors text-sm font-bold ${
+                  isActive
+                    ? "bg-primary-light text-primary"
+                    : "text-text-secondary hover:bg-primary-light hover:text-primary"
+                }`}
+              >
+                {item.icon}
+                {item.label}
+                {showBadge && (
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold">
+                    {unseenCount > 9 ? "9+" : unseenCount}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
         </nav>
 
-      {/* أسفل الـ Sidebar */}
-<div className="px-6 py-5 border-t border-[#EEF2F3] flex items-center gap-3">
-  <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold shrink-0">
-    أد
-  </div>
-  <div className="flex flex-col flex-1 min-w-0">
-    <span className="text-text-main text-xs font-bold">الأدمن</span>
-    <span className="text-text-secondary text-[11px] truncate">admin@carwash.com</span>
-  </div>
-  <button onClick={handleLogout} title="تسجيل الخروج" className="shrink-0 text-text-secondary hover:text-red-500 transition-colors">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-      <path d="M16 17l5-5-5-5" />
-      <path d="M21 12H9" />
-    </svg>
-  </button>
-</div>
+        {/* أسفل الـ Sidebar */}
+        <div className="px-6 py-5 border-t border-[#EEF2F3] flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold shrink-0">
+            أد
+          </div>
+          <div className="flex flex-col flex-1 min-w-0">
+            <span className="text-text-main text-xs font-bold">الأدمن</span>
+            <span className="text-text-secondary text-[11px] truncate">admin@carwash.com</span>
+          </div>
+          <button onClick={handleLogout} title="تسجيل الخروج" className="shrink-0 text-text-secondary hover:text-red-500 transition-colors">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <path d="M16 17l5-5-5-5" />
+              <path d="M21 12H9" />
+            </svg>
+          </button>
+        </div>
       </aside>
 
       {/* المساحة الرئيسية */}

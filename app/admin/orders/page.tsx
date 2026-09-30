@@ -6,7 +6,7 @@ type Order = {
   id: string;
   customer: { name: string; phone: string };
   carType: { name: string };
-      service: { name: string };
+  service: { name: string };
   plateNumber: string;
   extrasSnapshot: { id: string; name: string; price: number }[] | null;
   locationText: string;
@@ -39,7 +39,6 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
 
   const loadOrders = async () => {
-    setLoading(true);
     try {
       const res = await fetch("/api/admin/orders");
       setOrders(await res.json());
@@ -48,8 +47,21 @@ export default function OrdersPage() {
     }
   };
 
+  const markAllViewed = async () => {
+    await fetch("/api/admin/orders/mark-viewed", { method: "POST" });
+  };
+
   useEffect(() => {
     loadOrders();
+    markAllViewed();
+
+    // كل 10 ثواني: يجيب أحدث الطلبات، ويعلّمهم كـ "متشافين" بما إن الصفحة مفتوحة قدام الأدمن
+    const interval = setInterval(() => {
+      loadOrders();
+      markAllViewed();
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleStatusChange = async (id: string, status: string) => {
@@ -60,39 +72,40 @@ export default function OrdersPage() {
       body: JSON.stringify({ status }),
     });
   };
-const handleDelete = async (id: string) => {
-  if (!confirm("متأكد إنك عايز تحذف الطلب ده نهائيًا؟")) return;
-  setOrders((prev) => prev.filter((o) => o.id !== id));
-  await fetch(`/api/admin/orders/${id}`, { method: "DELETE" });
-};
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("متأكد إنك عايز تحذف الطلب ده نهائيًا؟")) return;
+    setOrders((prev) => prev.filter((o) => o.id !== id));
+    await fetch(`/api/admin/orders/${id}`, { method: "DELETE" });
+  };
 
   return (
     <div className="p-8 flex flex-col gap-7">
       <div className="flex flex-col gap-1">
         <h1 className="text-text-main text-2xl font-extrabold">الطلبات</h1>
-        <p className="text-text-secondary text-sm">كل طلبات العملاء وحالتها</p>
+        <p className="text-text-secondary text-sm">كل طلبات العملاء وحالتها، وتتحدث تلقائيًا كل 10 ثوانٍ</p>
       </div>
 
       <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(16,24,40,0.05)] overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-text-secondary text-sm">جاري التحميل...</div>
+          <div className="p-8 text-center text-text-secondary text-sm">جارٍ التحميل...</div>
         ) : orders.length === 0 ? (
-          <div className="p-8 text-center text-text-secondary text-sm">مفيش طلبات لسه</div>
+          <div className="p-8 text-center text-text-secondary text-sm">لا توجد طلبات بعد</div>
         ) : (
           <table className="w-full">
             <thead>
               <tr className="text-right border-b border-[#EEF2F3]">
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold">رقم الطلب</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold">العميل</th>
-                                <th className="px-6 py-3 text-text-secondary text-xs font-bold">السيارة</th>
+                <th className="px-6 py-3 text-text-secondary text-xs font-bold">السيارة</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold">رقم اللوحة</th>
-                                <th className="px-6 py-3 text-text-secondary text-xs font-bold">الخدمة</th>
+                <th className="px-6 py-3 text-text-secondary text-xs font-bold">الخدمة</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold">الخدمات الإضافية</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold">العنوان</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold">الموعد</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold">السعر</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold">الحالة</th>
-<th className="px-6 py-3 text-text-secondary text-xs font-bold">إجراءات</th>
+                <th className="px-6 py-3 text-text-secondary text-xs font-bold">إجراءات</th>
               </tr>
             </thead>
             <tbody>
@@ -105,9 +118,9 @@ const handleDelete = async (id: string) => {
                       <span className="text-text-secondary text-xs" dir="ltr">{order.customer.phone}</span>
                     </div>
                   </td>
-                                    <td className="px-6 py-4 text-text-secondary text-sm">{order.carType.name}</td>
+                  <td className="px-6 py-4 text-text-secondary text-sm">{order.carType.name}</td>
                   <td className="px-6 py-4 text-text-main text-sm font-bold" dir="ltr">{order.plateNumber}</td>
-                                    <td className="px-6 py-4 text-text-secondary text-sm">{order.service.name}</td>
+                  <td className="px-6 py-4 text-text-secondary text-sm">{order.service.name}</td>
                   <td className="px-6 py-4">
                     {order.extrasSnapshot && order.extrasSnapshot.length > 0 ? (
                       <div className="flex flex-col gap-1">
@@ -122,8 +135,8 @@ const handleDelete = async (id: string) => {
                     )}
                   </td>
                   <td className="px-6 py-4 text-text-secondary text-xs max-w-[200px] truncate" title={order.locationText}>
-  {order.locationText}
-</td>
+                    {order.locationText}
+                  </td>
                   <td className="px-6 py-4 text-text-secondary text-sm">
                     {new Date(order.scheduledDate).toLocaleDateString("ar-EG", { day: "numeric", month: "short" })} - {order.scheduledTime}
                   </td>
@@ -140,13 +153,13 @@ const handleDelete = async (id: string) => {
                     </select>
                   </td>
                   <td className="px-6 py-4">
-  <button
-    onClick={() => handleDelete(order.id)}
-    className="text-red-500 text-xs font-bold hover:underline"
-  >
-    حذف
-  </button>
-</td>
+                    <button
+                      onClick={() => handleDelete(order.id)}
+                      className="text-red-500 text-xs font-bold hover:underline"
+                    >
+                      حذف
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
