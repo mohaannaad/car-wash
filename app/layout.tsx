@@ -19,12 +19,12 @@ export const metadata: Metadata = {
     url: "https://washksa.com",
     siteName: "غسلة ولمعة",
     images: [
-      {
-        url: "/images/logo.png",
-        width: 800,
-        height: 800,
-      },
-    ],
+  {
+    url: "/images/og-image.png",
+    width: 1200,
+    height: 630,
+  },
+],
     locale: "ar_SA",
     type: "website",
   },
