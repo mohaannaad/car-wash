@@ -44,13 +44,8 @@ export default function PackagesPage() {
     loadPackages();
   }, []);
 
-  const handleAdd = async () => {
+ const handleAdd = async () => {
   if (!form.name.trim() || !form.washCount || !form.price || !form.originalPrice) return;
-  const washCountNum = Number(form.washCount);
-  if (washCountNum < 2 || washCountNum > 4) {
-    setError("عدد الأيام لازم يكون بين 2 و 4");
-    return;
-  }
     setSubmitting(true);
     setError("");
     try {
@@ -109,15 +104,25 @@ export default function PackagesPage() {
             placeholder="اسم الباقة"
             className="bg-[#F4F7F8] rounded-xl px-4 py-3 text-sm outline-none placeholder:text-[#98A2B3]"
           />
-          <input
-  type="number"
-  min={2}
-  max={4}
-  value={form.washCount}
-  onChange={(e) => setForm({ ...form, washCount: e.target.value })}
-  placeholder="عدد الأيام (من 2 إلى 4)"
-  className="bg-[#F4F7F8] rounded-xl px-4 py-3 text-sm outline-none placeholder:text-[#98A2B3]"
-/>
+       <div className="flex flex-col gap-1.5">
+  <span className="text-text-secondary text-xs px-1">عدد الأيام في الشهر</span>
+  <div className="grid grid-cols-3 gap-2">
+    {[2, 3, 4].map((count) => (
+      <button
+        key={count}
+        type="button"
+        onClick={() => setForm({ ...form, washCount: String(count) })}
+        className={`py-3 rounded-xl text-sm font-bold transition-colors ${
+          form.washCount === String(count)
+            ? "bg-primary text-white"
+            : "bg-[#F4F7F8] text-text-main"
+        }`}
+      >
+        {count}
+      </button>
+    ))}
+  </div>
+</div>
           <input
             type="text"
             value={form.serviceLabel}
