@@ -65,14 +65,15 @@ model Customer {
 }
 
 model Employee {
-  id        String   @id @default(cuid())
-  name      String
-  phone     String   @unique
-  role      String
-  password  String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  orders    Order[]
+  id                 String             @id @default(cuid())
+  name               String
+  phone              String             @unique
+  role               String
+  password           String?
+  isActive           Boolean            @default(true)
+  createdAt          DateTime           @default(now())
+  orders             Order[]
+  subscriptionWashes SubscriptionWash[]
 }
 
 // ===== الطلبات =====
@@ -129,22 +130,28 @@ enum SubscriptionStatus {
 }
 
 model Subscription {
-  id         String              @id @default(cuid())
-  customer   Customer            @relation(fields: [customerId], references: [id])
-  customerId String
-  package    Package             @relation(fields: [packageId], references: [id])
-  packageId  String
-  dayOfWeek  Int?
-  time       String?
-  status     SubscriptionStatus  @default(ACTIVE)
-  createdAt  DateTime            @default(now())
-  washes     SubscriptionWash[]
+  id            String              @id @default(cuid())
+  customer      Customer            @relation(fields: [customerId], references: [id])
+  customerId    String
+  package       Package             @relation(fields: [packageId], references: [id])
+  packageId     String
+  plateNumber   String?
+  locationLat   Float?
+  locationLng   Float?
+  locationText  String?
+  dayOfWeek     Int?
+  time          String?
+  status        SubscriptionStatus  @default(ACTIVE)
+  createdAt     DateTime            @default(now())
+  washes        SubscriptionWash[]
 }
 
 model SubscriptionWash {
   id             String       @id @default(cuid())
   subscription   Subscription @relation(fields: [subscriptionId], references: [id])
   subscriptionId String
+  employee       Employee?    @relation(fields: [employeeId], references: [id])
+  employeeId     String?
   scheduledDate  DateTime
   scheduledTime  String       @default("")
   status         OrderStatus  @default(PENDING)

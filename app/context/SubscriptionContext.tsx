@@ -10,19 +10,24 @@ type PackageData = {
   price: number;
 } | null;
 
+type Appointment = { date: string; time: string };
+
+type LocationData = {
+  lat: number;
+  lng: number;
+  address: string;
+} | null;
+
 type CustomerData = {
   name: string;
   phone: string;
-};
-
-type Appointment = {
-  date: string;
-  time: string;
+  plate: string;
 };
 
 type SubscriptionData = {
   package: PackageData;
   appointments: Appointment[];
+  location: LocationData;
   customer: CustomerData;
 };
 
@@ -30,6 +35,7 @@ type SubscriptionContextType = {
   subscription: SubscriptionData;
   setPackage: (pkg: PackageData) => void;
   setAppointments: (appointments: Appointment[]) => void;
+  setLocation: (location: LocationData) => void;
   setCustomer: (customer: CustomerData) => void;
 };
 
@@ -39,7 +45,8 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [subscription, setSubscription] = useState<SubscriptionData>({
     package: null,
     appointments: [],
-    customer: { name: "", phone: "" },
+    location: null,
+    customer: { name: "", phone: "", plate: "" },
   });
 
   const setPackage = (pkg: PackageData) => {
@@ -50,12 +57,16 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     setSubscription((prev) => ({ ...prev, appointments }));
   };
 
+  const setLocation = (location: LocationData) => {
+    setSubscription((prev) => ({ ...prev, location }));
+  };
+
   const setCustomer = (customer: CustomerData) => {
     setSubscription((prev) => ({ ...prev, customer }));
   };
 
   return (
-    <SubscriptionContext.Provider value={{ subscription, setPackage, setAppointments, setCustomer }}>
+    <SubscriptionContext.Provider value={{ subscription, setPackage, setAppointments, setLocation, setCustomer }}>
       {children}
     </SubscriptionContext.Provider>
   );

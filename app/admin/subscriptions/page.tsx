@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-type Wash = { date: string; time: string; status: string };
+type Wash = { date: string; time: string; status: string; employeeName: string };
 
 type Subscription = {
   id: string;
@@ -101,10 +101,10 @@ export default function AdminSubscriptionsPage() {
                   <td className="px-6 py-4">
                     <div className="flex flex-wrap gap-1.5 max-w-[260px]">
                       {sub.washes.map((w, i) => (
-                        <span key={i} className="text-[11px] font-bold text-primary bg-primary-light px-2 py-1 rounded-full whitespace-nowrap">
-                          {formatDate(w.date)} - {w.time}
-                        </span>
-                      ))}
+  <span key={i} className="text-[11px] font-bold text-primary bg-primary-light px-2 py-1 rounded-full whitespace-nowrap" title={w.employeeName}>
+    {formatDate(w.date)} - {w.time} ({w.employeeName})
+  </span>
+))}
                     </div>
                   </td>
                   <td className="px-6 py-4 text-text-main text-sm font-bold whitespace-nowrap">{sub.washesCompleted} / {sub.washesTotal}</td>

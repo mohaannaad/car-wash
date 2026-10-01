@@ -69,10 +69,10 @@ export default function SubscriptionSchedulePage() {
   };
 
   const handleConfirm = () => {
-    if (appointments.length !== washCount) return;
-    setAppointments(appointments);
-    router.push("/subscriptions/customer");
-  };
+  if (appointments.length !== washCount) return;
+  setAppointments(appointments);
+  router.push("/subscriptions/location");
+};
 
   const isComplete = appointments.length === washCount;
 
