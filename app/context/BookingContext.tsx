@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 
 type LocationData = {
   lat: number;
@@ -30,6 +30,19 @@ type BookingData = {
   customer: CustomerData;
 };
 
+const emptyBooking: BookingData = {
+  carType: null,
+  service: null,
+  extras: [],
+  area: null,
+  location: null,
+  date: null,
+  time: null,
+  customer: { name: "", phone: "", plate: "" },
+};
+
+const STORAGE_KEY = "carwash_booking_state";
+
 type BookingContextType = {
   booking: BookingData;
   setCarType: (value: CarTypeData) => void;
@@ -40,21 +53,38 @@ type BookingContextType = {
   setDate: (value: string) => void;
   setTime: (value: string) => void;
   setCustomer: (value: CustomerData) => void;
+  resetBooking: () => void;
 };
 
 const BookingContext = createContext<BookingContextType | undefined>(undefined);
 
 export function BookingProvider({ children }: { children: ReactNode }) {
-  const [booking, setBooking] = useState<BookingData>({
-    carType: null,
-    service: null,
-    extras: [],
-    area: null,
-    location: null,
-    date: null,
-    time: null,
-    customer: { name: "", phone: "", plate: "" },
-  });
+  const [booking, setBooking] = useState<BookingData>(emptyBooking);
+  const [hydrated, setHydrated] = useState(false);
+
+  // أول ما الصفحة تفتح، نجيب أي بيانات محفوظة من قبل (لو المستخدم كان في نص رحلة الحجز)
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        setBooking(JSON.parse(saved));
+      }
+    } catch {
+      // لو حصلت أي مشكلة في القراءة، نكمل بالقيم الفاضية العادية
+    } finally {
+      setHydrated(true);
+    }
+  }, []);
+
+  // كل مرة البيانات تتغير، نحفظها فورًا
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(booking));
+    } catch {
+      // تجاهل لو التخزين مش متاح
+    }
+  }, [booking, hydrated]);
 
   const setCarType = (value: CarTypeData) => setBooking((prev) => ({ ...prev, carType: value }));
   const setService = (value: ServiceData) => setBooking((prev) => ({ ...prev, service: value }));
@@ -71,8 +101,19 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   const setTime = (value: string) => setBooking((prev) => ({ ...prev, time: value }));
   const setCustomer = (value: CustomerData) => setBooking((prev) => ({ ...prev, customer: value }));
 
+  const resetBooking = () => {
+    setBooking(emptyBooking);
+    try {
+      sessionStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // تجاهل
+    }
+  };
+
   return (
-    <BookingContext.Provider value={{ booking, setCarType, setService, toggleExtra, setArea, setLocation, setDate, setTime, setCustomer }}>
+    <BookingContext.Provider
+      value={{ booking, setCarType, setService, toggleExtra, setArea, setLocation, setDate, setTime, setCustomer, resetBooking }}
+    >
       {children}
     </BookingContext.Provider>
   );

@@ -18,7 +18,7 @@ function SummaryRow({ icon, label, value }: { icon: React.ReactNode; label: stri
 
 export default function SummaryStep() {
   const router = useRouter();
-  const { booking } = useBooking();
+  const { booking, resetBooking } = useBooking();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -49,8 +49,9 @@ export default function SummaryStep() {
           totalPrice: total,
         }),
       });
-      if (!res.ok) throw new Error();
+           if (!res.ok) throw new Error();
       const order = await res.json();
+      resetBooking();
       router.push(`/booking/confirmation?orderId=${order.id}`);
     } catch {
       setError("حدث خطأ أثناء إرسال الطلب، حاول مرة أخرى");
