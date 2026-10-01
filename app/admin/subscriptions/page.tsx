@@ -52,13 +52,20 @@ export default function AdminSubscriptionsPage() {
   }, []);
 
   const handleStatusChange = async (id: string, status: string) => {
-    setSubscriptions((prev) => prev.map((s) => (s.id === id ? { ...s, status } : s)));
-    await fetch(`/api/admin/subscriptions/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    });
-  };
+  setSubscriptions((prev) => prev.map((s) => (s.id === id ? { ...s, status } : s)));
+  await fetch(`/api/admin/subscriptions/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status }),
+  });
+};
+
+const handleDelete = async (id: string) => {
+  if (!confirm("هل أنت متأكد من رغبتك في حذف هذا الاشتراك نهائيًا؟")) return;
+  setSubscriptions((prev) => prev.filter((s) => s.id !== id));
+  await fetch(`/api/admin/subscriptions/${id}`, { method: "DELETE" });
+};
+  
 
   return (
     <div className="p-8 flex flex-col gap-7">
@@ -80,7 +87,8 @@ export default function AdminSubscriptionsPage() {
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الباقة</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">المواعيد</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الغسلات المنفذة</th>
-                <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الحالة</th>
+               <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الحالة</th>
+<th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">إجراءات</th>
               </tr>
             </thead>
             <tbody>
@@ -119,6 +127,14 @@ export default function AdminSubscriptionsPage() {
                       ))}
                     </select>
                   </td>
+                  <td className="px-6 py-4">
+  <button
+    onClick={() => handleDelete(sub.id)}
+    className="text-red-500 text-xs font-bold hover:underline whitespace-nowrap"
+  >
+    حذف
+  </button>
+</td>
                 </tr>
               ))}
             </tbody>
