@@ -52,20 +52,19 @@ export default function AdminSubscriptionsPage() {
   }, []);
 
   const handleStatusChange = async (id: string, status: string) => {
-  setSubscriptions((prev) => prev.map((s) => (s.id === id ? { ...s, status } : s)));
-  await fetch(`/api/admin/subscriptions/${id}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status }),
-  });
-};
+    setSubscriptions((prev) => prev.map((s) => (s.id === id ? { ...s, status } : s)));
+    await fetch(`/api/admin/subscriptions/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+  };
 
-const handleDelete = async (id: string) => {
-  if (!confirm("هل أنت متأكد من رغبتك في حذف هذا الاشتراك نهائيًا؟")) return;
-  setSubscriptions((prev) => prev.filter((s) => s.id !== id));
-  await fetch(`/api/admin/subscriptions/${id}`, { method: "DELETE" });
-};
-  
+  const handleDelete = async (id: string) => {
+    if (!confirm("هل أنت متأكد من رغبتك في حذف هذا الاشتراك نهائيًا؟")) return;
+    setSubscriptions((prev) => prev.filter((s) => s.id !== id));
+    await fetch(`/api/admin/subscriptions/${id}`, { method: "DELETE" });
+  };
 
   return (
     <div className="p-8 flex flex-col gap-7">
@@ -87,8 +86,8 @@ const handleDelete = async (id: string) => {
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الباقة</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">المواعيد</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الغسلات المنفذة</th>
-               <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الحالة</th>
-<th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">إجراءات</th>
+                <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الحالة</th>
+                <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">إجراءات</th>
               </tr>
             </thead>
             <tbody>
@@ -109,10 +108,10 @@ const handleDelete = async (id: string) => {
                   <td className="px-6 py-4">
                     <div className="flex flex-wrap gap-1.5 max-w-[260px]">
                       {sub.washes.map((w, i) => (
-  <span key={i} className="text-[11px] font-bold text-primary bg-primary-light px-2 py-1 rounded-full whitespace-nowrap" title={w.employeeName}>
-    {formatDate(w.date)} - {w.time} ({w.employeeName})
-  </span>
-))}
+                        <span key={i} className="text-[11px] font-bold text-primary bg-primary-light px-2 py-1 rounded-full whitespace-nowrap" title={w.employeeName}>
+                          {formatDate(w.date)} - {w.time} ({w.employeeName})
+                        </span>
+                      ))}
                     </div>
                   </td>
                   <td className="px-6 py-4 text-text-main text-sm font-bold whitespace-nowrap">{sub.washesCompleted} / {sub.washesTotal}</td>
@@ -128,13 +127,13 @@ const handleDelete = async (id: string) => {
                     </select>
                   </td>
                   <td className="px-6 py-4">
-  <button
-    onClick={() => handleDelete(sub.id)}
-    className="text-red-500 text-xs font-bold hover:underline whitespace-nowrap"
-  >
-    حذف
-  </button>
-</td>
+                    <button
+                      onClick={() => handleDelete(sub.id)}
+                      className="text-red-500 text-xs font-bold hover:underline whitespace-nowrap"
+                    >
+                      حذف
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
