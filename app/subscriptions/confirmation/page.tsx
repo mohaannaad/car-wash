@@ -6,11 +6,12 @@ import { useSearchParams } from "next/navigation";
 import { toPng } from "html-to-image";
 import { useSubscription } from "../../context/SubscriptionContext";
 
+const dayNames = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
 const monthNames = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
 
-function formatDate(key: string) {
-  const d = new Date(key);
-  return `${d.getDate()} ${monthNames[d.getMonth()]}`;
+function formatFull(dateKey: string) {
+  const d = new Date(dateKey);
+  return { dayName: dayNames[d.getDay()], dateLabel: `${d.getDate()} ${monthNames[d.getMonth()]}` };
 }
 
 function ConfirmationContent() {
@@ -21,15 +22,14 @@ function ConfirmationContent() {
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState("");
 
+  const sortedAppointments = [...subscription.appointments].sort((a, b) => a.date.localeCompare(b.date));
+
   const handleDownload = async () => {
     if (!cardRef.current) return;
     setDownloading(true);
     setError("");
     try {
-      const dataUrl = await toPng(cardRef.current, {
-        backgroundColor: "#FFFFFF",
-        pixelRatio: 2,
-      });
+      const dataUrl = await toPng(cardRef.current, { backgroundColor: "#FFFFFF", pixelRatio: 2 });
       const link = document.createElement("a");
       link.download = `مواعيد-الاشتراك-${subscriptionId?.slice(-6) || "غسلة-ولمعة"}.png`;
       link.href = dataUrl;
@@ -42,36 +42,57 @@ function ConfirmationContent() {
   };
 
   return (
-    <main className="h-dvh flex flex-col items-center bg-bg-page overflow-hidden px-6 pt-16 pb-10 gap-6 text-center">
-      <div className="w-24 h-24 rounded-full bg-primary-light flex items-center justify-center shrink-0">
-        <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center">
-          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+    <main className="h-dvh flex flex-col items-center bg-bg-page overflow-hidden px-6 pt-12 pb-10 gap-5 text-center">
+      <div className="w-20 h-20 rounded-full bg-primary-light flex items-center justify-center shrink-0">
+        <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20 6L9 17l-5-5" />
           </svg>
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 shrink-0">
-        <h1 className="text-text-main text-2xl font-extrabold">تم تفعيل اشتراكك بنجاح</h1>
+      <div className="flex flex-col gap-1 shrink-0">
+        <h1 className="text-text-main text-xl font-extrabold">تم تفعيل اشتراكك بنجاح</h1>
         <p className="text-text-secondary text-sm">
           اشتراكك في <span className="font-bold text-text-main">{subscription.package?.name || "-"}</span> نشط الآن
         </p>
       </div>
 
-      {/* الكارت اللي هيتحول لصورة */}
-      <div ref={cardRef} className="w-full bg-white rounded-2xl p-5 flex flex-col gap-3 shadow-[0_2px_10px_rgba(16,24,40,0.05)] overflow-y-auto">
-        <div className="flex items-center gap-2 justify-center">
-          <span className="text-text-main text-sm font-extrabold">غسلة ولمعة</span>
+      <div ref={cardRef} className="w-full bg-white rounded-2xl overflow-hidden shadow-[0_2px_10px_rgba(16,24,40,0.05)] flex-1 min-h-0 flex flex-col">
+        <div className="bg-primary px-5 py-4 flex items-center justify-center gap-2">
+          <span className="text-white text-base font-extrabold">غسلة ولمعة</span>
         </div>
-        <span className="text-text-main text-sm font-bold">مواعيد الغسيل هذا الشهر</span>
-        <div className="flex flex-wrap gap-2 justify-center">
-          {subscription.scheduleDates.map((date) => (
-            <span key={date} className="bg-primary-light text-primary text-xs font-bold px-3 py-1.5 rounded-full">{formatDate(date)}</span>
-          ))}
+
+        <div className="p-5 flex flex-col gap-4 overflow-y-auto">
+          <div className="flex flex-col gap-1">
+            <span className="text-text-secondary text-xs">الباقة</span>
+            <span className="text-text-main text-base font-extrabold">{subscription.package?.name}</span>
+          </div>
+
+          <div className="h-px bg-[#EEF2F3]" />
+
+          <div className="flex flex-col gap-3">
+            <span className="text-text-main text-sm font-bold text-right">مواعيد الغسيل ({sortedAppointments.length})</span>
+            {sortedAppointments.map((a, index) => {
+              const { dayName, dateLabel } = formatFull(a.date);
+              return (
+                <div key={a.date} className="flex items-center gap-3 bg-[#F4F7F8] rounded-2xl px-4 py-3">
+                  <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-extrabold shrink-0">
+                    {index + 1}
+                  </div>
+                  <div className="flex-1 flex flex-col text-right">
+                    <span className="text-text-main text-sm font-bold">{dayName}</span>
+                    <span className="text-text-secondary text-xs">{dateLabel}</span>
+                  </div>
+                  <span className="text-primary text-sm font-extrabold">{a.time}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {error && <p className="text-red-500 text-xs font-medium">{error}</p>}
+      {error && <p className="text-red-500 text-xs font-medium shrink-0">{error}</p>}
 
       <button
         onClick={handleDownload}

@@ -134,8 +134,8 @@ model Subscription {
   customerId String
   package    Package             @relation(fields: [packageId], references: [id])
   packageId  String
-  dayOfWeek  Int
-  time       String
+  dayOfWeek  Int?
+  time       String?
   status     SubscriptionStatus  @default(ACTIVE)
   createdAt  DateTime            @default(now())
   washes     SubscriptionWash[]
@@ -146,5 +146,6 @@ model SubscriptionWash {
   subscription   Subscription @relation(fields: [subscriptionId], references: [id])
   subscriptionId String
   scheduledDate  DateTime
+  scheduledTime  String       @default("")
   status         OrderStatus  @default(PENDING)
 }

@@ -4,9 +4,9 @@ import { prisma } from "../../../lib/prisma";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { packageId, dayOfWeek, time, scheduleDates, customer } = body;
+    const { packageId, appointments, customer } = body;
 
-    if (!packageId || dayOfWeek === undefined || !time || !customer?.phone) {
+    if (!packageId || !Array.isArray(appointments) || appointments.length === 0 || !customer?.phone) {
       return NextResponse.json({ error: "بيانات ناقصة" }, { status: 400 });
     }
 
@@ -20,11 +20,10 @@ export async function POST(request: Request) {
       data: {
         customerId: customerRecord.id,
         packageId,
-        dayOfWeek,
-        time,
         washes: {
-          create: (scheduleDates as string[]).map((date) => ({
-            scheduledDate: new Date(date),
+          create: (appointments as { date: string; time: string }[]).map((a) => ({
+            scheduledDate: new Date(a.date),
+            scheduledTime: a.time,
           })),
         },
       },

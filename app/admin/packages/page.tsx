@@ -45,7 +45,12 @@ export default function PackagesPage() {
   }, []);
 
   const handleAdd = async () => {
-    if (!form.name.trim() || !form.washCount || !form.price || !form.originalPrice) return;
+  if (!form.name.trim() || !form.washCount || !form.price || !form.originalPrice) return;
+  const washCountNum = Number(form.washCount);
+  if (washCountNum < 2 || washCountNum > 4) {
+    setError("عدد الأيام لازم يكون بين 2 و 4");
+    return;
+  }
     setSubmitting(true);
     setError("");
     try {
@@ -105,12 +110,14 @@ export default function PackagesPage() {
             className="bg-[#F4F7F8] rounded-xl px-4 py-3 text-sm outline-none placeholder:text-[#98A2B3]"
           />
           <input
-            type="number"
-            value={form.washCount}
-            onChange={(e) => setForm({ ...form, washCount: e.target.value })}
-            placeholder="عدد الغسلات شهريًا"
-            className="bg-[#F4F7F8] rounded-xl px-4 py-3 text-sm outline-none placeholder:text-[#98A2B3]"
-          />
+  type="number"
+  min={2}
+  max={4}
+  value={form.washCount}
+  onChange={(e) => setForm({ ...form, washCount: e.target.value })}
+  placeholder="عدد الأيام (من 2 إلى 4)"
+  className="bg-[#F4F7F8] rounded-xl px-4 py-3 text-sm outline-none placeholder:text-[#98A2B3]"
+/>
           <input
             type="text"
             value={form.serviceLabel}

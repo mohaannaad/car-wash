@@ -18,44 +18,41 @@ export default function SubscriptionCustomerStep() {
   const isFormValid = isNameValid && isPhoneValid;
 
   const handleNext = async () => {
-    if (!isNameValid) {
-      setError("من فضلك اكتب اسمك كامل (3 حروف على الأقل)");
-      return;
-    }
-    if (!isPhoneValid) {
-      setError("يجب أن يبدأ رقم الجوال بـ 05 ويتكون من 10 أرقام");
-      return;
-    }
-    if (!subscription.package || subscription.dayOfWeek === null || !subscription.time) {
-      setError("في بيانات ناقصة، ارجع للخطوات السابقة");
-      return;
-    }
+  if (!isNameValid) {
+    setError("من فضلك اكتب اسمك كامل (3 حروف على الأقل)");
+    return;
+  }
+  if (!isPhoneValid) {
+    setError("رقم الجوال لازم يبدأ بـ 05 ويكون 10 أرقام");
+    return;
+  }
+  if (!subscription.package || subscription.appointments.length === 0) {
+    setError("في بيانات ناقصة، ارجع للخطوات السابقة");
+    return;
+  }
 
-    setSubmitting(true);
-    setError("");
-    try {
-      const res = await fetch("/api/subscriptions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          packageId: subscription.package.id,
-          dayOfWeek: subscription.dayOfWeek,
-          time: subscription.time,
-          scheduleDates: subscription.scheduleDates,
-          customer: { name: name.trim(), phone },
-        }),
-      });
-      if (!res.ok) throw new Error();
-      const created = await res.json();
-      setCustomer({ name: name.trim(), phone });
-      router.push(`/subscriptions/confirmation?subscriptionId=${created.id}`);
-    } catch {
-      setError("حدث خطأ أثناء تفعيل الاشتراك، حاول مرة أخرى");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
+  setSubmitting(true);
+  setError("");
+  try {
+    const res = await fetch("/api/subscriptions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        packageId: subscription.package.id,
+        appointments: subscription.appointments,
+        customer: { name: name.trim(), phone },
+      }),
+    });
+    if (!res.ok) throw new Error();
+    const created = await res.json();
+    setCustomer({ name: name.trim(), phone });
+    router.push(`/subscriptions/confirmation?subscriptionId=${created.id}`);
+  } catch {
+    setError("حدث خطأ أثناء تفعيل الاشتراك، حاول مرة أخرى");
+  } finally {
+    setSubmitting(false);
+  }
+};
   return (
     <main className="h-dvh flex flex-col bg-bg-page overflow-hidden">
       <div className="px-6 pt-8 pb-5 flex flex-col gap-1 shrink-0">
