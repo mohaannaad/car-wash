@@ -34,7 +34,7 @@ export default function PackagesPage() {
       const res = await fetch("/api/admin/packages");
       setPackages(await res.json());
     } catch {
-      setError("حصل خطأ في تحميل البيانات");
+      setError("حدث خطأ أثناء تحميل البيانات");
     } finally {
       setLoading(false);
     }
@@ -44,8 +44,8 @@ export default function PackagesPage() {
     loadPackages();
   }, []);
 
- const handleAdd = async () => {
-  if (!form.name.trim() || !form.washCount || !form.price || !form.originalPrice) return;
+  const handleAdd = async () => {
+    if (!form.name.trim() || !form.washCount || !form.price || !form.originalPrice) return;
     setSubmitting(true);
     setError("");
     try {
@@ -58,7 +58,7 @@ export default function PackagesPage() {
       setForm({ name: "", washCount: "", serviceLabel: "", price: "", originalPrice: "", badge: "" });
       await loadPackages();
     } catch {
-      setError("حصل خطأ في الإضافة");
+      setError("حدث خطأ أثناء الإضافة");
     } finally {
       setSubmitting(false);
     }
@@ -73,17 +73,17 @@ export default function PackagesPage() {
       });
       await loadPackages();
     } catch {
-      setError("حصل خطأ في التعديل");
+      setError("حدث خطأ أثناء التعديل");
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("متأكد إنك عايز تحذف الباقة دي؟")) return;
+    if (!confirm("هل أنت متأكد من رغبتك في حذف الباقة؟")) return;
     try {
       await fetch(`/api/admin/packages/${id}`, { method: "DELETE" });
       await loadPackages();
     } catch {
-      setError("حصل خطأ في الحذف");
+      setError("حدث خطأ أثناء الحذف");
     }
   };
 
@@ -104,25 +104,27 @@ export default function PackagesPage() {
             placeholder="اسم الباقة"
             className="bg-[#F4F7F8] rounded-xl px-4 py-3 text-sm outline-none placeholder:text-[#98A2B3]"
           />
-       <div className="flex flex-col gap-1.5">
-  <span className="text-text-secondary text-xs px-1">عدد الأيام في الشهر</span>
-  <div className="grid grid-cols-3 gap-2">
-    {[2, 3, 4].map((count) => (
-      <button
-        key={count}
-        type="button"
-        onClick={() => setForm({ ...form, washCount: String(count) })}
-        className={`py-3 rounded-xl text-sm font-bold transition-colors ${
-          form.washCount === String(count)
-            ? "bg-primary text-white"
-            : "bg-[#F4F7F8] text-text-main"
-        }`}
-      >
-        {count}
-      </button>
-    ))}
-  </div>
-</div>
+
+          <div className="flex flex-col gap-1.5">
+            <span className="text-text-secondary text-xs px-1">عدد الأيام في الشهر</span>
+            <div className="grid grid-cols-3 gap-2">
+              {[2, 3, 4].map((count) => (
+                <button
+                  key={count}
+                  type="button"
+                  onClick={() => setForm({ ...form, washCount: String(count) })}
+                  className={`py-3 rounded-xl text-sm font-bold transition-colors ${
+                    form.washCount === String(count)
+                      ? "bg-primary text-white"
+                      : "bg-[#F4F7F8] text-text-main"
+                  }`}
+                >
+                  {count}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <input
             type="text"
             value={form.serviceLabel}
@@ -161,7 +163,7 @@ export default function PackagesPage() {
               : "bg-primary"
           }`}
         >
-          {submitting ? "جاري الإضافة..." : "+ إضافة باقة"}
+          {submitting ? "جارٍ الإضافة..." : "+ إضافة باقة"}
         </button>
       </div>
 
@@ -170,9 +172,9 @@ export default function PackagesPage() {
       {/* جدول الباقات */}
       <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(16,24,40,0.05)] overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-text-secondary text-sm">جاري التحميل...</div>
+          <div className="p-8 text-center text-text-secondary text-sm">جارٍ التحميل...</div>
         ) : packages.length === 0 ? (
-          <div className="p-8 text-center text-text-secondary text-sm">مفيش باقات مضافة لسه</div>
+          <div className="p-8 text-center text-text-secondary text-sm">لا توجد باقات مضافة بعد</div>
         ) : (
           <table className="w-full">
             <thead>
