@@ -4,7 +4,10 @@ import { prisma } from "../../../../lib/prisma";
 
 export async function GET() {
   try {
-    const employees = await prisma.employee.findMany({ orderBy: { createdAt: "asc" } });
+    const employees = await prisma.employee.findMany({
+      include: { district: { include: { city: true } } },
+      orderBy: { createdAt: "asc" },
+    });
     const safe = employees.map(({ password, ...rest }) => rest);
     return NextResponse.json(safe);
   } catch (error) {
@@ -15,7 +18,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, phone, role, password } = body;
+       const { name, phone, role, password, districtId } = body;
 
     if (!name || !phone || !role || !password) {
       return NextResponse.json({ error: "البيانات ناقصة، لازم تحط باسورد للموظف" }, { status: 400 });
@@ -24,7 +27,7 @@ export async function POST(request: Request) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const employee = await prisma.employee.create({
-      data: { name: name.trim(), phone: phone.trim(), role: role.trim(), password: hashedPassword },
+      data: { name: name.trim(), phone: phone.trim(), role: role.trim(), password: hashedPassword, districtId: districtId || undefined },
     });
 
     const { password: _pw, ...safeEmployee } = employee;

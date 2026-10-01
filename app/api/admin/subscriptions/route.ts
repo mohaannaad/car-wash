@@ -3,8 +3,8 @@ import { prisma } from "../../../../lib/prisma";
 
 export async function GET() {
   try {
-   const subscriptions = await prisma.subscription.findMany({
-  include: { customer: true, package: true, washes: { include: { employee: true } } },
+ const subscriptions = await prisma.subscription.findMany({
+  include: { customer: true, package: true, washes: { include: { employee: true } }, district: { include: { city: true } } },
   orderBy: { createdAt: "desc" },
 });
 
@@ -14,6 +14,7 @@ export async function GET() {
   package: { name: sub.package.name, price: sub.package.price },
   plateNumber: sub.plateNumber,
   locationText: sub.locationText,
+  area: sub.district ? `${sub.district.city.name} - ${sub.district.name}` : "غير محدد",
   status: sub.status,
       washes: sub.washes
   .sort((a, b) => a.scheduledDate.getTime() - b.scheduledDate.getTime())

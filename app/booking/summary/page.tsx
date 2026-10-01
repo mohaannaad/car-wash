@@ -26,7 +26,7 @@ export default function SummaryStep() {
   const total = (booking.service?.price ?? 0) + extrasTotal;
 
   const handleConfirm = async () => {
-    if (!booking.carType || !booking.service || !booking.location || !booking.date || !booking.time) {
+        if (!booking.carType || !booking.service || !booking.area || !booking.location || !booking.date || !booking.time) {
       setError("توجد بيانات ناقصة في طلبك، عُد إلى الخطوات السابقة وتأكد منها");
       return;
     }
@@ -40,6 +40,7 @@ export default function SummaryStep() {
           carTypeId: booking.carType.id,
           serviceId: booking.service.id,
           extras: booking.extras,
+          districtId: booking.area?.districtId,
           plateNumber: booking.customer.plate,
           location: booking.location,
           date: booking.date,

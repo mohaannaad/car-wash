@@ -28,8 +28,8 @@ export default function ExtrasStep() {
   const total = booking.extras.reduce((sum, e) => sum + e.price, 0);
   const isSelected = (id: string) => booking.extras.some((e) => e.id === id);
 
-  const handleNext = () => {
-    router.push("/booking/location");
+   const handleNext = () => {
+    router.push("/booking/area");
   };
 
   return (

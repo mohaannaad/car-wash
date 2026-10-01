@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
 
-async function assignEmployeesForWashes(count: number) {
-  const activeEmployees = await prisma.employee.findMany({ where: { isActive: true } });
+async function assignEmployeesForWashes(count: number, districtId?: string) {
+  const activeEmployees = await prisma.employee.findMany({
+    where: { isActive: true, ...(districtId && { districtId }) },
+  });
   if (activeEmployees.length === 0) return Array(count).fill(null);
 
   const loads = await Promise.all(
@@ -17,8 +19,7 @@ async function assignEmployeesForWashes(count: number) {
     })
   );
 
-  // كل مرة بناخد أقل موظف تحميل، ونزود تحميله مؤقتًا عشان لو في أكتر من يوم في نفس الطلب، يتوزعوا بينهم بدل ما ياخدهم موظف واحد
-  const assignments: string[] = [];
+  const assignments: (string | null)[] = [];
   for (let i = 0; i < count; i++) {
     loads.sort((a, b) => a.load - b.load);
     assignments.push(loads[0].id);
@@ -30,7 +31,7 @@ async function assignEmployeesForWashes(count: number) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { packageId, appointments, location, plateNumber, customer } = body;
+    const { packageId, appointments, districtId, location, plateNumber, customer } = body;
 
     if (!packageId || !Array.isArray(appointments) || appointments.length === 0 || !customer?.phone || !location) {
       return NextResponse.json({ error: "بيانات ناقصة" }, { status: 400 });
@@ -43,12 +44,13 @@ export async function POST(request: Request) {
     });
 
     const typedAppointments = appointments as { date: string; time: string }[];
-    const employeeAssignments = await assignEmployeesForWashes(typedAppointments.length);
+    const employeeAssignments = await assignEmployeesForWashes(typedAppointments.length, districtId);
 
     const subscription = await prisma.subscription.create({
       data: {
         customerId: customerRecord.id,
         packageId,
+        districtId: districtId ?? undefined,
         plateNumber,
         locationLat: location.lat,
         locationLng: location.lng,

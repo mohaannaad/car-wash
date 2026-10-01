@@ -68,11 +68,11 @@ export default function SubscriptionSchedulePage() {
     return `${day.dayName} ${day.dayNumber} ${day.monthName}`;
   };
 
-  const handleConfirm = () => {
-  if (appointments.length !== washCount) return;
-  setAppointments(appointments);
-  router.push("/subscriptions/location");
-};
+    const handleConfirm = () => {
+    if (appointments.length !== washCount) return;
+    setAppointments(appointments);
+    router.push("/subscriptions/area");
+  };
 
   const isComplete = appointments.length === washCount;
 

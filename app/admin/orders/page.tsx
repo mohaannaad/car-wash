@@ -15,6 +15,7 @@ type Order = {
   totalPrice: number;
   status: string;
   employeeId: string | null;
+  district: { name: string; city: { name: string } } | null;
 };
 
 type Employee = { id: string; name: string; isActive: boolean };
@@ -121,6 +122,7 @@ export default function OrdersPage() {
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">رقم اللوحة</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الخدمة</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الخدمات الإضافية</th>
+                               <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">المنطقة</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">العنوان</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الموعد</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">السعر</th>
@@ -154,6 +156,9 @@ export default function OrdersPage() {
                     ) : (
                       <span className="text-text-secondary text-xs">لا توجد</span>
                     )}
+                  </td>
+                                   <td className="px-6 py-4 text-text-secondary text-xs whitespace-nowrap">
+                    {order.district ? `${order.district.city.name} - ${order.district.name}` : "غير محدد"}
                   </td>
                   <td className="px-6 py-4 text-text-secondary text-xs max-w-[200px] truncate" title={order.locationText}>
                     {order.locationText}

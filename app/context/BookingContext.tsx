@@ -11,6 +11,7 @@ type LocationData = {
 type CarTypeData = { id: string; name: string } | null;
 type ServiceData = { id: string; name: string; price: number } | null;
 type ExtraData = { id: string; name: string; price: number };
+type AreaData = { cityId: string; cityName: string; districtId: string; districtName: string } | null;
 
 type CustomerData = {
   name: string;
@@ -22,6 +23,7 @@ type BookingData = {
   carType: CarTypeData;
   service: ServiceData;
   extras: ExtraData[];
+  area: AreaData;
   location: LocationData;
   date: string | null;
   time: string | null;
@@ -33,6 +35,7 @@ type BookingContextType = {
   setCarType: (value: CarTypeData) => void;
   setService: (value: ServiceData) => void;
   toggleExtra: (value: ExtraData) => void;
+  setArea: (value: AreaData) => void;
   setLocation: (value: LocationData) => void;
   setDate: (value: string) => void;
   setTime: (value: string) => void;
@@ -46,49 +49,30 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     carType: null,
     service: null,
     extras: [],
+    area: null,
     location: null,
     date: null,
     time: null,
     customer: { name: "", phone: "", plate: "" },
   });
 
-  const setCarType = (value: CarTypeData) => {
-    setBooking((prev) => ({ ...prev, carType: value }));
-  };
-
-  const setService = (value: ServiceData) => {
-    setBooking((prev) => ({ ...prev, service: value }));
-  };
-
-  const toggleExtra = (value: ExtraData) => {
+  const setCarType = (value: CarTypeData) => setBooking((prev) => ({ ...prev, carType: value }));
+  const setService = (value: ServiceData) => setBooking((prev) => ({ ...prev, service: value }));
+  const toggleExtra = (value: ExtraData) =>
     setBooking((prev) => ({
       ...prev,
       extras: prev.extras.some((e) => e.id === value.id)
         ? prev.extras.filter((e) => e.id !== value.id)
         : [...prev.extras, value],
     }));
-  };
-
-  const setLocation = (value: LocationData) => {
-    setBooking((prev) => ({ ...prev, location: value }));
-  };
-
-  const setDate = (value: string) => {
-    setBooking((prev) => ({ ...prev, date: value }));
-  };
-
-  const setTime = (value: string) => {
-    setBooking((prev) => ({ ...prev, time: value }));
-  };
-
-  const setCustomer = (value: CustomerData) => {
-    setBooking((prev) => ({ ...prev, customer: value }));
-  };
+  const setArea = (value: AreaData) => setBooking((prev) => ({ ...prev, area: value }));
+  const setLocation = (value: LocationData) => setBooking((prev) => ({ ...prev, location: value }));
+  const setDate = (value: string) => setBooking((prev) => ({ ...prev, date: value }));
+  const setTime = (value: string) => setBooking((prev) => ({ ...prev, time: value }));
+  const setCustomer = (value: CustomerData) => setBooking((prev) => ({ ...prev, customer: value }));
 
   return (
-    <BookingContext.Provider
-      value={{ booking, setCarType, setService, toggleExtra, setLocation, setDate, setTime, setCustomer }}
-    >
+    <BookingContext.Provider value={{ booking, setCarType, setService, toggleExtra, setArea, setLocation, setDate, setTime, setCustomer }}>
       {children}
     </BookingContext.Provider>
   );

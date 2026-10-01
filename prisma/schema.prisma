@@ -70,6 +70,8 @@ model Employee {
   phone              String             @unique
   role               String
   password           String?
+  district           District?          @relation(fields: [districtId], references: [id])
+  districtId         String?
   isActive           Boolean            @default(true)
   createdAt          DateTime           @default(now())
   orders             Order[]
@@ -97,8 +99,10 @@ model Order {
   serviceId     String
   extras        OrderExtra[]
   extrasSnapshot Json?
-  employee      Employee?    @relation(fields: [employeeId], references: [id])
+    employee      Employee?    @relation(fields: [employeeId], references: [id])
   employeeId    String?
+  district      District?    @relation(fields: [districtId], references: [id])
+  districtId    String?
   plateNumber   String
   locationLat   Float
   locationLng   Float
@@ -134,7 +138,9 @@ model Subscription {
   customer      Customer            @relation(fields: [customerId], references: [id])
   customerId    String
   package       Package             @relation(fields: [packageId], references: [id])
-  packageId     String
+    packageId     String
+  district      District?           @relation(fields: [districtId], references: [id])
+  districtId    String?
   plateNumber   String?
   locationLat   Float?
   locationLng   Float?
@@ -155,4 +161,25 @@ model SubscriptionWash {
   scheduledDate  DateTime
   scheduledTime  String       @default("")
   status         OrderStatus  @default(PENDING)
+}
+
+
+model City {
+  id        String     @id @default(cuid())
+  name      String
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  districts District[]
+}
+
+model District {
+  id            String         @id @default(cuid())
+  name          String
+  city          City           @relation(fields: [cityId], references: [id])
+  cityId        String
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  employees     Employee[]
+  orders        Order[]
+  subscriptions Subscription[]
 }

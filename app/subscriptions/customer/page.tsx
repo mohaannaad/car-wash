@@ -32,7 +32,7 @@ export default function SubscriptionCustomerStep() {
       setError("من فضلك أدخل رقم لوحة السيارة");
       return;
     }
-    if (!subscription.package || subscription.appointments.length === 0 || !subscription.location) {
+       if (!subscription.package || subscription.appointments.length === 0 || !subscription.area || !subscription.location) {
       setError("توجد بيانات ناقصة، عُد إلى الخطوات السابقة");
       return;
     }
@@ -46,6 +46,7 @@ export default function SubscriptionCustomerStep() {
         body: JSON.stringify({
           packageId: subscription.package.id,
           appointments: subscription.appointments,
+          districtId: subscription.area.districtId,
           location: subscription.location,
           plateNumber: plate.trim(),
           customer: { name: name.trim(), phone },

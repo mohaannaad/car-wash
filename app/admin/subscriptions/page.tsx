@@ -8,6 +8,7 @@ type Subscription = {
   id: string;
   customer: { name: string; phone: string };
   package: { name: string; price: number };
+  area: string;
   status: string;
   washes: Wash[];
   washesTotal: number;
@@ -84,6 +85,7 @@ export default function AdminSubscriptionsPage() {
               <tr className="text-right border-b border-[#EEF2F3]">
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">العميل</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الباقة</th>
+                                <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">المنطقة</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">المواعيد</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الغسلات المنفذة</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الحالة</th>
@@ -105,6 +107,8 @@ export default function AdminSubscriptionsPage() {
                       <span className="text-text-secondary text-xs">{sub.package.price} ر.س</span>
                     </div>
                   </td>
+                                    <td className="px-6 py-4 text-text-secondary text-xs whitespace-nowrap">{sub.area}</td>
+                                   <td className="px-6 py-4 text-text-secondary text-xs whitespace-nowrap">{sub.area}</td>
                   <td className="px-6 py-4">
                     <div className="flex flex-wrap gap-1.5 max-w-[260px]">
                       {sub.washes.map((w, i) => (

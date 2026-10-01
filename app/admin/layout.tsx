@@ -60,6 +60,16 @@ const navItems = [
     ),
   },
   {
+    href: "/admin/cities",
+    label: "المدن والأحياء",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" />
+        <circle cx="12" cy="10" r="3" />
+      </svg>
+    ),
+  },
+  {
     href: "/admin/car-types",
     label: "أنواع السيارات",
     icon: (
@@ -127,17 +137,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     if (pathname === "/admin/login") return;
-
     const checkUnseen = async () => {
       try {
         const res = await fetch("/api/admin/orders/unseen-count");
         const data = await res.json();
         setUnseenCount(data.count ?? 0);
       } catch {
-        // تجاهل أي خطأ مؤقت في الشبكة
+        // تجاهل
       }
     };
-
     checkUnseen();
     const interval = setInterval(checkUnseen, 10000);
     return () => clearInterval(interval);
@@ -149,9 +157,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen flex bg-[#F4F7F8]">
-      {/* Sidebar */}
       <aside className="w-64 shrink-0 bg-white border-l border-[#EEF2F3] flex flex-col">
-        {/* اللوجو */}
         <div className="px-6 py-7 border-b border-[#EEF2F3] flex items-center gap-3">
           <div className="w-11 h-11 rounded-xl bg-primary-light flex items-center justify-center shrink-0">
             <Image src="/images/logo.png" alt="غسلة ولمعة" width={32} height={32} className="h-auto w-auto max-w-[28px]" />
@@ -162,8 +168,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </div>
 
-        {/* روابط التنقل */}
-        <nav className="flex-1 px-3 py-5 flex flex-col gap-1">
+        <nav className="flex-1 px-3 py-5 flex flex-col gap-1 overflow-y-auto">
           {navItems.map((item) => {
             const isActive = item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
             const showBadge = item.href === "/admin/orders" && unseenCount > 0;
@@ -172,9 +177,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 key={item.href}
                 href={item.href}
                 className={`relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-colors text-sm font-bold ${
-                  isActive
-                    ? "bg-primary-light text-primary"
-                    : "text-text-secondary hover:bg-primary-light hover:text-primary"
+                  isActive ? "bg-primary-light text-primary" : "text-text-secondary hover:bg-primary-light hover:text-primary"
                 }`}
               >
                 {item.icon}
@@ -189,11 +192,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           })}
         </nav>
 
-        {/* أسفل الـ Sidebar */}
         <div className="px-6 py-5 border-t border-[#EEF2F3] flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold shrink-0">
-            أد
-          </div>
+          <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold shrink-0">أد</div>
           <div className="flex flex-col flex-1 min-w-0">
             <span className="text-text-main text-xs font-bold">الأدمن</span>
             <span className="text-text-secondary text-[11px] truncate">admin@carwash.com</span>
@@ -208,7 +208,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </aside>
 
-      {/* المساحة الرئيسية */}
       <main className="flex-1 min-w-0">{children}</main>
     </div>
   );

@@ -9,13 +9,14 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { name, phone, role, isActive, password } = body;
+       const { name, phone, role, isActive, password, districtId } = body;
 
     const data: Record<string, unknown> = {
       ...(name !== undefined && { name: name.trim() }),
       ...(phone !== undefined && { phone: phone.trim() }),
       ...(role !== undefined && { role: role.trim() }),
       ...(isActive !== undefined && { isActive }),
+      ...(districtId !== undefined && { districtId: districtId || null }),
     };
 
     if (password) {
