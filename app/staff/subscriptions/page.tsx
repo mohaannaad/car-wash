@@ -10,6 +10,8 @@ type WashTask = {
   packageName: string;
   customer: { name: string; phone: string };
   locationText: string | null;
+  locationLat: number | null;
+  locationLng: number | null;
   plateNumber: string | null;
 };
 
@@ -105,9 +107,22 @@ export default function StaffSubscriptionTasksPage() {
                   </span>
                 </div>
                 <div className="flex flex-col gap-1 text-xs text-text-secondary">
-                  <span>العميل: {task.customer.name}</span>
-                  {task.plateNumber && <span dir="ltr" className="text-right">لوحة: {task.plateNumber}</span>}
-                  {task.locationText && <span>{task.locationText}</span>}
+  <span>العميل: {task.customer.name}</span>
+  {task.plateNumber && <span dir="ltr" className="text-right">لوحة: {task.plateNumber}</span>}
+  {task.locationText && task.locationLat && task.locationLng && (
+    <a
+      href={`https://www.google.com/maps/search/?api=1&query=${task.locationLat}%2C${task.locationLng}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center gap-1.5 text-primary font-bold"
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+        <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" />
+        <circle cx="12" cy="10" r="3" />
+      </svg>
+      {task.locationText}
+    </a>
+  )}
                   <span>{formatDate(task.scheduledDate)} - {task.scheduledTime}</span>
                   <span dir="ltr" className="text-right">{task.customer.phone}</span>
                 </div>

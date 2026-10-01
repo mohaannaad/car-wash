@@ -9,6 +9,8 @@ type Order = {
   service: { name: string };
   plateNumber: string;
   locationText: string;
+  locationLat: number;
+  locationLng: number;
   scheduledDate: string;
   scheduledTime: string;
   status: string;
@@ -98,10 +100,21 @@ export default function StaffOrdersPage() {
                     {statusLabels[order.status]}
                   </span>
                 </div>
-                <div className="flex flex-col gap-1 text-xs text-text-secondary">
-                  <span>{order.carType.name} · {order.service.name}</span>
-                  <span dir="ltr" className="text-right">لوحة: {order.plateNumber}</span>
-                  <span>{order.locationText}</span>
+               <div className="flex flex-col gap-1 text-xs text-text-secondary">
+  <span>{order.carType.name} · {order.service.name}</span>
+  <span dir="ltr" className="text-right">لوحة: {order.plateNumber}</span>
+  <a
+    href={`https://www.google.com/maps/search/?api=1&query=${order.locationLat}%2C${order.locationLng}`}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="flex items-center gap-1.5 text-primary font-bold"
+  >
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" />
+      <circle cx="12" cy="10" r="3" />
+    </svg>
+    {order.locationText}
+  </a>
                   <span>
                     {new Date(order.scheduledDate).toLocaleDateString("ar-EG", { day: "numeric", month: "short" })} - {order.scheduledTime}
                   </span>
