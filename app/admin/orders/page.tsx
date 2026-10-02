@@ -16,6 +16,7 @@ type Order = {
   status: string;
   employeeId: string | null;
   district: { name: string; city: { name: string } } | null;
+  createdAt: string;
 };
 
 type Employee = { id: string; name: string; isActive: boolean };
@@ -38,10 +39,22 @@ const statusStyles: Record<string, string> = {
   CANCELLED: "bg-red-50 text-red-500",
 };
 
+function formatSentAt(dateStr: string) {
+  const d = new Date(dateStr);
+  return d.toLocaleString("ar-EG", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const loadOrders = async () => {
     try {
@@ -100,6 +113,14 @@ export default function OrdersPage() {
     await fetch(`/api/admin/orders/${id}`, { method: "DELETE" });
   };
 
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredOrders = orders.filter((order) => {
+    if (!normalizedQuery) return true;
+    const serial = order.id.slice(-6).toLowerCase();
+    const phone = order.customer.phone.toLowerCase();
+    return serial.includes(normalizedQuery) || phone.includes(normalizedQuery);
+  });
+
   return (
     <div className="p-8 flex flex-col gap-7">
       <div className="flex flex-col gap-1">
@@ -107,22 +128,46 @@ export default function OrdersPage() {
         <p className="text-text-secondary text-sm">كل طلبات العملاء وحالتها، وتتحدث تلقائيًا كل 10 ثوانٍ</p>
       </div>
 
+      <div className="bg-white rounded-2xl p-4 shadow-[0_2px_10px_rgba(16,24,40,0.05)] flex items-center gap-3">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#98A2B3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+          <circle cx="11" cy="11" r="8" />
+          <path d="M21 21l-4.3-4.3" />
+        </svg>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="ابحث برقم الطلب (السيريال) أو رقم جوال العميل"
+          className="flex-1 text-sm outline-none placeholder:text-[#98A2B3]"
+          dir="ltr"
+          style={{ textAlign: "right" }}
+        />
+        {searchQuery && (
+          <button onClick={() => setSearchQuery("")} className="text-text-secondary text-xs font-bold hover:text-red-500">
+            مسح
+          </button>
+        )}
+      </div>
+
       <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(16,24,40,0.05)] overflow-x-auto">
         {loading ? (
           <div className="p-8 text-center text-text-secondary text-sm">جارٍ التحميل...</div>
-        ) : orders.length === 0 ? (
-          <div className="p-8 text-center text-text-secondary text-sm">لا توجد طلبات بعد</div>
+        ) : filteredOrders.length === 0 ? (
+          <div className="p-8 text-center text-text-secondary text-sm">
+            {orders.length === 0 ? "لا توجد طلبات بعد" : "لا توجد نتائج مطابقة للبحث"}
+          </div>
         ) : (
           <table className="w-full">
             <thead>
               <tr className="text-right border-b border-[#EEF2F3]">
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">رقم الطلب</th>
+                <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">تاريخ الإرسال</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">العميل</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">السيارة</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">رقم اللوحة</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الخدمة</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الخدمات الإضافية</th>
-                               <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">المنطقة</th>
+                <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">المنطقة</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">العنوان</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الموعد</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">السعر</th>
@@ -132,9 +177,10 @@ export default function OrdersPage() {
               </tr>
             </thead>
             <tbody>
-              {orders.map((order) => (
+              {filteredOrders.map((order) => (
                 <tr key={order.id} className="border-t border-[#EEF2F3]">
                   <td className="px-6 py-4 text-text-main text-sm font-bold whitespace-nowrap" dir="ltr">#{order.id.slice(-6).toUpperCase()}</td>
+                  <td className="px-6 py-4 text-text-secondary text-xs whitespace-nowrap" dir="ltr">{formatSentAt(order.createdAt)}</td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col">
                       <span className="text-text-main text-sm font-bold">{order.customer.name}</span>
@@ -157,7 +203,7 @@ export default function OrdersPage() {
                       <span className="text-text-secondary text-xs">لا توجد</span>
                     )}
                   </td>
-                                   <td className="px-6 py-4 text-text-secondary text-xs whitespace-nowrap">
+                  <td className="px-6 py-4 text-text-secondary text-xs whitespace-nowrap">
                     {order.district ? `${order.district.city.name} - ${order.district.name}` : "غير محدد"}
                   </td>
                   <td className="px-6 py-4 text-text-secondary text-xs max-w-[200px] truncate" title={order.locationText}>
