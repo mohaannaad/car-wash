@@ -13,6 +13,7 @@ type Subscription = {
   washes: Wash[];
   washesTotal: number;
   washesCompleted: number;
+  createdAt: string;
 };
 
 const statusLabels: Record<string, string> = {
@@ -34,11 +35,23 @@ function formatDate(dateStr: string) {
   return `${d.getDate()} ${monthNames[d.getMonth()]}`;
 }
 
+function formatActivatedAt(dateStr: string) {
+  const d = new Date(dateStr);
+  return d.toLocaleString("ar-EG", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
 export default function AdminSubscriptionsPage() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
-   const loadSubscriptions = async () => {
+  const loadSubscriptions = async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/admin/subscriptions");
@@ -77,6 +90,14 @@ export default function AdminSubscriptionsPage() {
     await fetch(`/api/admin/subscriptions/${id}`, { method: "DELETE" });
   };
 
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredSubscriptions = subscriptions.filter((sub) => {
+    if (!normalizedQuery) return true;
+    const serial = sub.id.slice(-6).toLowerCase();
+    const phone = sub.customer.phone.toLowerCase();
+    return serial.includes(normalizedQuery) || phone.includes(normalizedQuery);
+  });
+
   return (
     <div className="p-8 flex flex-col gap-7">
       <div className="flex flex-col gap-1">
@@ -84,18 +105,43 @@ export default function AdminSubscriptionsPage() {
         <p className="text-text-secondary text-sm">كل الاشتراكات الشهرية ومواعيدها</p>
       </div>
 
+      <div className="bg-white rounded-2xl p-4 shadow-[0_2px_10px_rgba(16,24,40,0.05)] flex items-center gap-3">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#98A2B3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+          <circle cx="11" cy="11" r="8" />
+          <path d="M21 21l-4.3-4.3" />
+        </svg>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="ابحث برقم الاشتراك (السيريال) أو رقم جوال العميل"
+          className="flex-1 text-sm outline-none placeholder:text-[#98A2B3]"
+          dir="ltr"
+          style={{ textAlign: "right" }}
+        />
+        {searchQuery && (
+          <button onClick={() => setSearchQuery("")} className="text-text-secondary text-xs font-bold hover:text-red-500">
+            مسح
+          </button>
+        )}
+      </div>
+
       <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(16,24,40,0.05)] overflow-x-auto">
         {loading ? (
           <div className="p-8 text-center text-text-secondary text-sm">جارٍ التحميل...</div>
-        ) : subscriptions.length === 0 ? (
-          <div className="p-8 text-center text-text-secondary text-sm">لا توجد اشتراكات بعد</div>
+        ) : filteredSubscriptions.length === 0 ? (
+          <div className="p-8 text-center text-text-secondary text-sm">
+            {subscriptions.length === 0 ? "لا توجد اشتراكات بعد" : "لا توجد نتائج مطابقة للبحث"}
+          </div>
         ) : (
           <table className="w-full">
             <thead>
               <tr className="text-right border-b border-[#EEF2F3]">
+                <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">رقم الاشتراك</th>
+                <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">تاريخ التفعيل</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">العميل</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الباقة</th>
-                                <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">المنطقة</th>
+                <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">المنطقة</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">المواعيد</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الغسلات المنفذة</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الحالة</th>
@@ -103,8 +149,10 @@ export default function AdminSubscriptionsPage() {
               </tr>
             </thead>
             <tbody>
-              {subscriptions.map((sub) => (
+              {filteredSubscriptions.map((sub) => (
                 <tr key={sub.id} className="border-t border-[#EEF2F3]">
+                  <td className="px-6 py-4 text-text-main text-sm font-bold whitespace-nowrap" dir="ltr">#{sub.id.slice(-6).toUpperCase()}</td>
+                  <td className="px-6 py-4 text-text-secondary text-xs whitespace-nowrap" dir="ltr">{formatActivatedAt(sub.createdAt)}</td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col">
                       <span className="text-text-main text-sm font-bold">{sub.customer.name}</span>
@@ -117,15 +165,23 @@ export default function AdminSubscriptionsPage() {
                       <span className="text-text-secondary text-xs">{sub.package.price} ر.س</span>
                     </div>
                   </td>
-                                    <td className="px-6 py-4 text-text-secondary text-xs whitespace-nowrap">{sub.area}</td>
-                                   <td className="px-6 py-4 text-text-secondary text-xs whitespace-nowrap">{sub.area}</td>
+                  <td className="px-6 py-4 text-text-secondary text-xs whitespace-nowrap">{sub.area}</td>
                   <td className="px-6 py-4">
                     <div className="flex flex-wrap gap-1.5 max-w-[260px]">
-                      {sub.washes.map((w, i) => (
-                        <span key={i} className="text-[11px] font-bold text-primary bg-primary-light px-2 py-1 rounded-full whitespace-nowrap" title={w.employeeName}>
-                          {formatDate(w.date)} - {w.time} ({w.employeeName})
-                        </span>
-                      ))}
+                      {sub.washes.map((w, i) => {
+                        const isDone = w.status === "COMPLETED";
+                        return (
+                          <span
+                            key={i}
+                            title={w.employeeName}
+                            className={`text-[11px] font-bold px-2 py-1 rounded-full whitespace-nowrap ${
+                              isDone ? "bg-[#F4F7F8] text-[#98A2B3] line-through" : "text-primary bg-primary-light"
+                            }`}
+                          >
+                            {formatDate(w.date)} - {w.time} ({w.employeeName})
+                          </span>
+                        );
+                      })}
                     </div>
                   </td>
                   <td className="px-6 py-4 text-text-main text-sm font-bold whitespace-nowrap">{sub.washesCompleted} / {sub.washesTotal}</td>
