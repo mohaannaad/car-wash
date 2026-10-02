@@ -24,12 +24,23 @@ function ConfirmationContent() {
 
   const sortedAppointments = [...subscription.appointments].sort((a, b) => a.date.localeCompare(b.date));
 
-  const handleDownload = async () => {
+   const handleDownload = async () => {
     if (!cardRef.current) return;
     setDownloading(true);
     setError("");
     try {
-      const dataUrl = await toPng(cardRef.current, { backgroundColor: "#FFFFFF", pixelRatio: 2 });
+      const element = cardRef.current;
+      // بنصور العنصر بطول محتواه الحقيقي كامل، مش بس المساحة الظاهرة على الشاشة
+      const dataUrl = await toPng(element, {
+        backgroundColor: "#FFFFFF",
+        pixelRatio: 2,
+        width: element.scrollWidth,
+        height: element.scrollHeight,
+        style: {
+          height: `${element.scrollHeight}px`,
+          overflow: "visible",
+        },
+      });
       const link = document.createElement("a");
       link.download = `مواعيد-الاشتراك-${subscriptionId?.slice(-6) || "غسلة-ولمعة"}.png`;
       link.href = dataUrl;
@@ -63,7 +74,7 @@ function ConfirmationContent() {
         </p>
       </div>
 
-      <div ref={cardRef} className="w-full bg-white rounded-2xl overflow-hidden shadow-[0_2px_10px_rgba(16,24,40,0.05)] flex-1 min-h-0 flex flex-col">
+      <div ref={cardRef} className="w-full bg-white rounded-2xl overflow-hidden shadow-[0_2px_10px_rgba(16,24,40,0.05)] flex-1 min-h-0 flex flex-col overflow-y-auto">
         <div className="bg-primary px-5 py-4 flex items-center justify-center gap-2">
           <span className="text-white text-base font-extrabold">غسلة ولمعة</span>
         </div>
