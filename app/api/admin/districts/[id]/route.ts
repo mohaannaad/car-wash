@@ -18,6 +18,14 @@ export async function PATCH(
       },
     });
 
+    // لو الحي اتوقف، نوقف كل الموظفين المرتبطين بيه
+    if (isActive === false) {
+      await prisma.employee.updateMany({
+        where: { districtId: id },
+        data: { isActive: false },
+      });
+    }
+
     return NextResponse.json(district);
   } catch (error) {
     return NextResponse.json({ error: "فشل في التعديل" }, { status: 500 });

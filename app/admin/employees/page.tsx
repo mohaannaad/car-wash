@@ -49,8 +49,11 @@ export default function EmployeesPage() {
     loadCities();
   }, []);
 
-  const districtsForSelectedCity = cities.find((c) => c.id === form.cityId)?.districts || [];
-  const allDistricts = cities.flatMap((c) => c.districts.map((d) => ({ ...d, cityName: c.name })));
+  const activeCities = cities.filter((c) => c.isActive);
+const districtsForSelectedCity = (activeCities.find((c) => c.id === form.cityId)?.districts || []).filter((d) => d.isActive);
+const allDistricts = activeCities.flatMap((c) =>
+  c.districts.filter((d) => d.isActive).map((d) => ({ ...d, cityName: c.name }))
+);
 
   const handleAdd = async () => {
     if (!form.name.trim() || !form.phone.trim() || !form.role.trim() || !form.password.trim()) return;
@@ -180,15 +183,15 @@ export default function EmployeesPage() {
             className="bg-[#F4F7F8] rounded-xl px-4 py-3 text-sm outline-none placeholder:text-[#98A2B3] text-right"
           />
           <select
-            value={form.cityId}
-            onChange={(e) => setForm({ ...form, cityId: e.target.value, districtId: "" })}
-            className="bg-[#F4F7F8] rounded-xl px-4 py-3 text-sm outline-none"
-          >
-            <option value="">اختر المدينة</option>
-            {cities.map((city) => (
-              <option key={city.id} value={city.id}>{city.name}</option>
-            ))}
-          </select>
+  value={form.cityId}
+  onChange={(e) => setForm({ ...form, cityId: e.target.value, districtId: "" })}
+  className="bg-[#F4F7F8] rounded-xl px-4 py-3 text-sm outline-none"
+>
+  <option value="">اختر المدينة</option>
+  {activeCities.map((city) => (
+    <option key={city.id} value={city.id}>{city.name}</option>
+  ))}
+</select>
           <select
             value={form.districtId}
             onChange={(e) => setForm({ ...form, districtId: e.target.value })}

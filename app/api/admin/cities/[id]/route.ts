@@ -18,6 +18,16 @@ export async function PATCH(
       },
     });
 
+    // لو المدينة اتوقفت، نوقف كل الأحياء التابعة ليها، وكل الموظفين في الأحياء دي
+    if (isActive === false) {
+      const districts = await prisma.district.findMany({ where: { cityId: id } });
+      await prisma.district.updateMany({ where: { cityId: id }, data: { isActive: false } });
+      await prisma.employee.updateMany({
+        where: { districtId: { in: districts.map((d) => d.id) } },
+        data: { isActive: false },
+      });
+    }
+
     return NextResponse.json(city);
   } catch (error) {
     return NextResponse.json({ error: "فشل في التعديل" }, { status: 500 });
