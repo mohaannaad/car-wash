@@ -67,16 +67,26 @@ function ConfirmationContent() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-1 shrink-0">
+           <div className="flex flex-col gap-1 shrink-0">
         <h1 className="text-text-main text-xl font-extrabold">تم تفعيل اشتراكك بنجاح</h1>
         <p className="text-text-secondary text-sm">
           اشتراكك في <span className="font-bold text-text-main">{subscription.package?.name || "-"}</span> نشط الآن
         </p>
+        {subscriptionId && (
+          <span dir="ltr" className="text-primary text-sm font-extrabold">
+            #{subscriptionId.slice(-6).toUpperCase()}
+          </span>
+        )}
       </div>
 
       <div ref={cardRef} className="w-full bg-white rounded-2xl overflow-hidden shadow-[0_2px_10px_rgba(16,24,40,0.05)] flex-1 min-h-0 flex flex-col overflow-y-auto">
-        <div className="bg-primary px-5 py-4 flex items-center justify-center gap-2">
+                <div className="bg-primary px-5 py-4 flex flex-col items-center justify-center gap-1">
           <span className="text-white text-base font-extrabold">غسلة ولمعة</span>
+          {subscriptionId && (
+            <span dir="ltr" className="text-white/85 text-xs font-bold">
+              رقم الاشتراك: #{subscriptionId.slice(-6).toUpperCase()}
+            </span>
+          )}
         </div>
 
         <div className="p-5 flex flex-col gap-4 overflow-y-auto">
