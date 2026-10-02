@@ -4,20 +4,26 @@ import { prisma } from "../../../../lib/prisma";
 export async function GET() {
   try {
     const customers = await prisma.customer.findMany({
-      include: { orders: { select: { totalPrice: true } } },
       orderBy: { createdAt: "desc" },
+      include: {
+        orders: { select: { totalPrice: true } },
+      },
     });
 
-    const formatted = customers.map((customer: { id: string; name: string; phone: string; createdAt: Date; orders: { totalPrice: number }[] }) => ({
-      id: customer.id,
-      name: customer.name,
-      phone: customer.phone,
-      createdAt: customer.createdAt,
-      ordersCount: customer.orders.length,
-      totalSpent: customer.orders.reduce((sum: number, order: { totalPrice: number }) => sum + order.totalPrice, 0),
-    }));
+    const result = customers.map((c) => {
+      const ordersCount = c.orders.length;
+      const totalSpent = c.orders.reduce((sum, o) => sum + o.totalPrice, 0);
+      return {
+        id: c.id,
+        name: c.name,
+        phone: c.phone,
+        createdAt: c.createdAt,
+        ordersCount,
+        totalSpent,
+      };
+    });
 
-    return NextResponse.json(formatted);
+    return NextResponse.json(result);
   } catch (error) {
     return NextResponse.json({ error: "فشل في جلب العملاء" }, { status: 500 });
   }
