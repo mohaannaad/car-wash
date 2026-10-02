@@ -52,10 +52,9 @@ export default function SubscriptionCustomerStep() {
           customer: { name: name.trim(), phone },
         }),
       });
-            if (!res.ok) throw new Error();
+                if (!res.ok) throw new Error();
       const created = await res.json();
       setCustomer({ name: name.trim(), phone, plate: plate.trim() });
-      resetSubscription();
       router.push(`/subscriptions/confirmation?subscriptionId=${created.id}`);
     } catch {
       setError("حدث خطأ أثناء تفعيل الاشتراك، حاول مرة أخرى");

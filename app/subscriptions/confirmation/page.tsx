@@ -1,8 +1,7 @@
 "use client";
 
 import { Suspense, useRef, useState } from "react";
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toPng } from "html-to-image";
 import { useSubscription } from "../../context/SubscriptionContext";
 
@@ -15,7 +14,8 @@ function formatFull(dateKey: string) {
 }
 
 function ConfirmationContent() {
-  const { subscription } = useSubscription();
+  const router = useRouter();
+  const { subscription, resetSubscription } = useSubscription();
   const searchParams = useSearchParams();
   const subscriptionId = searchParams.get("subscriptionId");
   const cardRef = useRef<HTMLDivElement>(null);
@@ -39,6 +39,11 @@ function ConfirmationContent() {
     } finally {
       setDownloading(false);
     }
+  };
+
+  const handleBackHome = () => {
+    resetSubscription();
+    router.push("/");
   };
 
   return (
@@ -105,9 +110,12 @@ function ConfirmationContent() {
         {downloading ? "جارٍ التحميل..." : "تحميل المواعيد كصورة"}
       </button>
 
-      <Link href="/" className="w-full flex items-center justify-center py-4 rounded-2xl font-bold text-white bg-primary shadow-[0_8px_20px_rgba(25,185,198,0.35)] shrink-0">
+      <button
+        onClick={handleBackHome}
+        className="w-full flex items-center justify-center py-4 rounded-2xl font-bold text-white bg-primary shadow-[0_8px_20px_rgba(25,185,198,0.35)] shrink-0"
+      >
         العودة للرئيسية
-      </Link>
+      </button>
     </main>
   );
 }

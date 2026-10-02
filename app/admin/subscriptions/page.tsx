@@ -38,7 +38,7 @@ export default function AdminSubscriptionsPage() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const loadSubscriptions = async () => {
+   const loadSubscriptions = async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/admin/subscriptions");
@@ -48,8 +48,18 @@ export default function AdminSubscriptionsPage() {
     }
   };
 
+  const markAllViewed = async () => {
+    await fetch("/api/admin/subscriptions/mark-viewed", { method: "POST" });
+  };
+
   useEffect(() => {
     loadSubscriptions();
+    markAllViewed();
+    const interval = setInterval(() => {
+      loadSubscriptions();
+      markAllViewed();
+    }, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleStatusChange = async (id: string, status: string) => {

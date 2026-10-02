@@ -127,7 +127,8 @@ const navItems = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [unseenCount, setUnseenCount] = useState(0);
+  const [unseenOrders, setUnseenOrders] = useState(0);
+  const [unseenSubscriptions, setUnseenSubscriptions] = useState(0);
 
   const handleLogout = async () => {
     await fetch("/api/admin/auth/logout", { method: "POST" });
@@ -137,15 +138,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     if (pathname === "/admin/login") return;
+
     const checkUnseen = async () => {
       try {
-        const res = await fetch("/api/admin/orders/unseen-count");
-        const data = await res.json();
-        setUnseenCount(data.count ?? 0);
+        const [ordersRes, subscriptionsRes] = await Promise.all([
+          fetch("/api/admin/orders/unseen-count"),
+          fetch("/api/admin/subscriptions/unseen-count"),
+        ]);
+        const ordersData = await ordersRes.json();
+        const subscriptionsData = await subscriptionsRes.json();
+        setUnseenOrders(ordersData.count ?? 0);
+        setUnseenSubscriptions(subscriptionsData.count ?? 0);
       } catch {
         // تجاهل
       }
     };
+
     checkUnseen();
     const interval = setInterval(checkUnseen, 10000);
     return () => clearInterval(interval);
@@ -171,7 +179,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <nav className="flex-1 px-3 py-5 flex flex-col gap-1 overflow-y-auto">
           {navItems.map((item) => {
             const isActive = item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
-            const showBadge = item.href === "/admin/orders" && unseenCount > 0;
+            const badgeCount =
+              item.href === "/admin/orders" ? unseenOrders : item.href === "/admin/subscriptions" ? unseenSubscriptions : 0;
+            const showBadge = badgeCount > 0;
             return (
               <Link
                 key={item.href}
@@ -184,7 +194,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 {item.label}
                 {showBadge && (
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold">
-                    {unseenCount > 9 ? "9+" : unseenCount}
+                    {badgeCount > 9 ? "9+" : badgeCount}
                   </span>
                 )}
               </Link>

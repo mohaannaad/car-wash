@@ -148,6 +148,7 @@ model Subscription {
   dayOfWeek     Int?
   time          String?
   status        SubscriptionStatus  @default(ACTIVE)
+  viewed        Boolean             @default(false)
   createdAt     DateTime            @default(now())
   washes        SubscriptionWash[]
 }
