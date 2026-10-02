@@ -167,9 +167,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="min-h-screen flex bg-[#F4F7F8]">
       <aside className="w-64 shrink-0 bg-white border-l border-[#EEF2F3] flex flex-col">
         <div className="px-6 py-7 border-b border-[#EEF2F3] flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl bg-primary-light flex items-center justify-center shrink-0">
-            <Image src="/images/logo.png" alt="غسلة ولمعة" width={32} height={32} className="h-auto w-auto max-w-[28px]" />
-          </div>
+          <div className="w-14 h-14 flex items-center justify-center shrink-0">
+  <Image src="/images/logo-color.png" alt="غسلة ولمعة" width={56} height={56} className="h-auto w-auto max-w-[56px]" />
+</div>
           <div className="flex flex-col">
             <span className="text-text-main text-sm font-extrabold">غسلة ولمعة</span>
             <span className="text-text-secondary text-xs">لوحة التحكم</span>
