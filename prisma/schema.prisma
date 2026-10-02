@@ -91,8 +91,8 @@ enum OrderStatus {
 
 model Order {
   id            String       @id @default(cuid())
-  customer      Customer     @relation(fields: [customerId], references: [id])
-  customerId    String
+   customer      Customer?    @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  customerId    String?
   carType       CarType      @relation(fields: [carTypeId], references: [id])
   carTypeId     String
   service       Service      @relation(fields: [serviceId], references: [id])
@@ -135,8 +135,8 @@ enum SubscriptionStatus {
 
 model Subscription {
   id            String              @id @default(cuid())
-  customer      Customer            @relation(fields: [customerId], references: [id])
-  customerId    String
+    customer   Customer?           @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  customerId String?
   package       Package             @relation(fields: [packageId], references: [id])
     packageId     String
   district      District?           @relation(fields: [districtId], references: [id])
