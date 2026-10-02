@@ -70,7 +70,7 @@ model Employee {
   phone              String             @unique
   role               String
   password           String?
-  district           District?          @relation(fields: [districtId], references: [id])
+district           District?          @relation(fields: [districtId], references: [id], onDelete: SetNull)
   districtId         String?
   isActive           Boolean            @default(true)
   createdAt          DateTime           @default(now())
@@ -101,7 +101,7 @@ model Order {
   extrasSnapshot Json?
     employee      Employee?    @relation(fields: [employeeId], references: [id])
   employeeId    String?
-  district      District?    @relation(fields: [districtId], references: [id])
+district      District?    @relation(fields: [districtId], references: [id], onDelete: SetNull)
   districtId    String?
   plateNumber   String
   locationLat   Float
@@ -139,7 +139,7 @@ model Subscription {
   customerId String?
   package       Package             @relation(fields: [packageId], references: [id])
     packageId     String
-  district      District?           @relation(fields: [districtId], references: [id])
+ district      District?           @relation(fields: [districtId], references: [id], onDelete: SetNull)
   districtId    String?
   plateNumber   String?
   locationLat   Float?
@@ -176,7 +176,7 @@ model City {
 model District {
   id            String         @id @default(cuid())
   name          String
-  city          City           @relation(fields: [cityId], references: [id])
+city          City           @relation(fields: [cityId], references: [id], onDelete: Cascade)
   cityId        String
   isActive      Boolean        @default(true)
   createdAt     DateTime       @default(now())

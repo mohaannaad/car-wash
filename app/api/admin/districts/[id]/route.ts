@@ -32,6 +32,7 @@ export async function PATCH(
   }
 }
 
+
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -40,13 +41,7 @@ export async function DELETE(
     const { id } = await params;
     await prisma.district.delete({ where: { id } });
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    if (error.code === "P2003") {
-      return NextResponse.json(
-        { error: "لا يمكن حذف الحي لأنه مرتبط بموظفين أو طلبات، أوقفه بدلًا من حذفه" },
-        { status: 409 }
-      );
-    }
+  } catch (error) {
     return NextResponse.json({ error: "فشل في الحذف" }, { status: 500 });
   }
 }

@@ -42,13 +42,7 @@ export async function DELETE(
     const { id } = await params;
     await prisma.city.delete({ where: { id } });
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    if (error.code === "P2003") {
-      return NextResponse.json(
-        { error: "لا يمكن حذف المدينة لأنها مرتبطة بأحياء أو طلبات، أوقفها بدلًا من حذفها" },
-        { status: 409 }
-      );
-    }
+  } catch (error) {
     return NextResponse.json({ error: "فشل في الحذف" }, { status: 500 });
   }
 }
