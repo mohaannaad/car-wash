@@ -6,7 +6,19 @@ import { useSubscription } from "../../context/SubscriptionContext";
 
 const dayNames = ["أحد", "اثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"];
 const monthNames = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
-const timeSlots = ["09:00 ص", "10:00 ص", "11:00 ص", "12:00 م", "01:00 م", "02:00 م", "03:00 م", "04:00 م"];
+
+const WORK_START_HOUR = 9;
+const WORK_END_HOUR = 18;
+
+function buildTimeSlots() {
+  const slots: { label: string; hour: number }[] = [];
+  for (let hour = WORK_START_HOUR; hour <= WORK_END_HOUR; hour++) {
+    const period = hour < 12 ? "ص" : "م";
+    const displayHour = hour > 12 ? hour - 12 : hour;
+    slots.push({ label: `${String(displayHour).padStart(2, "0")}:00 ${period}`, hour });
+  }
+  return slots;
+}
 
 function buildNext30Days() {
   const days = [];
@@ -32,9 +44,18 @@ export default function SubscriptionSchedulePage() {
 
   const washCount = subscription.package?.washCount ?? 3;
   const days = useMemo(() => buildNext30Days(), []);
+  const timeSlots = useMemo(() => buildTimeSlots(), []);
 
   const [appointments, setLocalAppointments] = useState<Appointment[]>([]);
   const [activeDate, setActiveDate] = useState<string | null>(null);
+
+  const now = new Date();
+  const todayKey = now.toISOString().split("T")[0];
+
+  const isSlotDisabled = (dayKey: string, hour: number) => {
+    if (dayKey !== todayKey) return false;
+    return hour <= now.getHours();
+  };
 
   const appointmentFor = (dateKey: string) => appointments.find((a) => a.date === dateKey);
 
@@ -68,13 +89,16 @@ export default function SubscriptionSchedulePage() {
     return `${day.dayName} ${day.dayNumber} ${day.monthName}`;
   };
 
-    const handleConfirm = () => {
+  const handleConfirm = () => {
     if (appointments.length !== washCount) return;
     setAppointments(appointments);
     router.push("/subscriptions/area");
   };
 
   const isComplete = appointments.length === washCount;
+  const availableSlotsForActiveDate = activeDate
+    ? timeSlots.filter((slot) => !isSlotDisabled(activeDate, slot.hour))
+    : [];
 
   return (
     <main className="h-dvh flex flex-col bg-bg-page overflow-hidden">
@@ -142,24 +166,32 @@ export default function SubscriptionSchedulePage() {
         {activeDate && (
           <div>
             <span className="text-text-main text-sm font-bold mb-3 block">اختر الوقت ليوم {formatLabel(activeDate)}</span>
-            <div className="grid grid-cols-3 gap-2.5">
-              {timeSlots.map((time) => {
-                const isSelected = appointmentFor(activeDate)?.time === time;
-                return (
-                  <button
-                    key={time}
-                    onClick={() => handleTimeSelect(time)}
-                    className={`rounded-xl py-3 text-sm font-bold transition-all ${
-                      isSelected
-                        ? "bg-primary text-white shadow-[0_6px_16px_rgba(25,185,198,0.3)]"
-                        : "bg-white text-text-main shadow-[0_2px_10px_rgba(16,24,40,0.05)]"
-                    }`}
-                  >
-                    {time}
-                  </button>
-                );
-              })}
-            </div>
+            {availableSlotsForActiveDate.length === 0 ? (
+              <p className="text-text-secondary text-sm">لا توجد مواعيد متاحة في هذا اليوم</p>
+            ) : (
+              <div className="grid grid-cols-3 gap-2.5">
+                {timeSlots.map((slot) => {
+                  const disabled = isSlotDisabled(activeDate, slot.hour);
+                  const isSelected = appointmentFor(activeDate)?.time === slot.label;
+                  return (
+                    <button
+                      key={slot.label}
+                      onClick={() => !disabled && handleTimeSelect(slot.label)}
+                      disabled={disabled}
+                      className={`rounded-xl py-3 text-sm font-bold transition-all ${
+                        disabled
+                          ? "bg-[#F4F7F8] text-[#C4C4C4] cursor-not-allowed"
+                          : isSelected
+                          ? "bg-primary text-white shadow-[0_6px_16px_rgba(25,185,198,0.3)]"
+                          : "bg-white text-text-main shadow-[0_2px_10px_rgba(16,24,40,0.05)]"
+                      }`}
+                    >
+                      {slot.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
       </div>
