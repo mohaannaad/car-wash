@@ -10,7 +10,7 @@ export async function GET() {
 
     const formatted = subscriptions.map((sub) => ({
   id: sub.id,
-  customer: { name: sub.customer.name, phone: sub.customer.phone },
+  customer: { name: sub.customer?.name ?? "عميل محذوف", phone: sub.customer?.phone ?? "-" },
   package: { name: sub.package.name, price: sub.package.price },
   plateNumber: sub.plateNumber,
   locationText: sub.locationText,

@@ -23,7 +23,7 @@ export async function GET() {
     scheduledDate: w.scheduledDate,
     scheduledTime: w.scheduledTime,
     packageName: w.subscription.package.name,
-    customer: { name: w.subscription.customer.name, phone: w.subscription.customer.phone },
+   customer: { name: w.subscription.customer?.name ?? "عميل محذوف", phone: w.subscription.customer?.phone ?? "-" },
     locationText: w.subscription.locationText,
     locationLat: w.subscription.locationLat,
     locationLng: w.subscription.locationLng,

@@ -56,7 +56,7 @@ export async function GET() {
 
     const recentOrders = recentOrdersRaw.map((o) => ({
       id: o.id,
-      customer: o.customer.name,
+      customer: o.customer?.name ?? "عميل محذوف",
       service: o.service.name,
       status: o.status,
       price: o.totalPrice,
