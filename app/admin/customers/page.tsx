@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import html2canvas from "html2canvas";
 import * as XLSX from "xlsx";
 
 interface Customer {
@@ -37,6 +37,8 @@ export default function CustomersPage() {
   const [selectedItem, setSelectedItem] = useState<HistoryItem | null>(null);
   const [vatRate, setVatRate] = useState<number>(15);
   const [generatingInvoice, setGeneratingInvoice] = useState(false);
+
+  const invoiceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchCustomers();
@@ -101,7 +103,6 @@ export default function CustomersPage() {
     }
   };
 
-  // تحميل بيانات العملاء ملف إكسيل بدل PDF
   const handleExportExcel = () => {
     const rows = filteredCustomers.map((c) => ({
       Name: c.name,
@@ -117,7 +118,6 @@ export default function CustomersPage() {
     XLSX.writeFile(workbook, "customers.xlsx");
   };
 
-  // فتح مودال اصدار الفاتورة لعميل معين
   const handleOpenInvoiceModal = async (customer: Customer) => {
     setInvoiceCustomer(customer);
     setInvoiceModalOpen(true);
@@ -155,57 +155,32 @@ export default function CustomersPage() {
     setSelectedItem(null);
   };
 
-  // توليد ملف PDF للفاتورة
-  const handleGenerateInvoice = () => {
-    if (!selectedItem || !invoiceCustomer) {
+  // توليد الفاتورة: بنحول تصميم الـ HTML (invoiceRef) لصورة، وبعدين نحطها جوه PDF
+  const handleGenerateInvoice = async () => {
+    if (!selectedItem || !invoiceCustomer || !invoiceRef.current) {
       alert("من فضلك اختار الطلب أو الباقة المطلوب إصدار فاتورة لها");
       return;
     }
 
     setGeneratingInvoice(true);
     try {
-      const subtotal = selectedItem.price;
-      const vatAmount = (subtotal * vatRate) / 100;
-      const total = subtotal + vatAmount;
+      // تأخير بسيط عشان نضمن إن التصميم واللوجو خلصوا تحميل قبل التصوير
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
-      const doc = new jsPDF();
-
-      doc.setFontSize(18);
-      doc.text("Tax Invoice", 14, 18);
-
-      doc.setFontSize(10);
-      doc.text(`Invoice Date: ${new Date().toLocaleDateString("en-GB")}`, 14, 28);
-      doc.text(`Customer Name: ${invoiceCustomer.name}`, 14, 34);
-      doc.text(`Phone: ${invoiceCustomer.phone}`, 14, 40);
-
-      autoTable(doc, {
-        startY: 48,
-        head: [["Description", "Date", "Amount (SAR)"]],
-        body: [
-          [
-            selectedItem.label,
-            new Date(selectedItem.date).toLocaleDateString("en-GB"),
-            subtotal.toFixed(2),
-          ],
-        ],
+      const canvas = await html2canvas(invoiceRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
       });
 
-      // @ts-expect-error jspdf-autotable attaches lastAutoTable at runtime
-      const finalY = doc.lastAutoTable.finalY || 60;
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-      doc.setFontSize(11);
-      doc.text(`Subtotal: ${subtotal.toFixed(2)} SAR`, 140, finalY + 10, {
-        align: "left",
-      });
-      doc.text(`VAT (${vatRate}%): ${vatAmount.toFixed(2)} SAR`, 140, finalY + 17, {
-        align: "left",
-      });
-      doc.setFont("helvetica", "bold");
-      doc.text(`Total: ${total.toFixed(2)} SAR`, 140, finalY + 25, {
-        align: "left",
-      });
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`invoice-${invoiceCustomer.name}-${Date.now()}.pdf`);
 
-      doc.save(`invoice-${invoiceCustomer.name}-${Date.now()}.pdf`);
       handleCloseInvoiceModal();
     } catch (error) {
       console.error(error);
@@ -214,6 +189,9 @@ export default function CustomersPage() {
       setGeneratingInvoice(false);
     }
   };
+
+  const vatAmount = selectedItem ? (selectedItem.price * vatRate) / 100 : 0;
+  const totalAmount = selectedItem ? selectedItem.price + vatAmount : 0;
 
   return (
     <div className="p-6" dir="rtl">
@@ -386,13 +364,13 @@ export default function CustomersPage() {
                 <div className="flex justify-between">
                   <span className="text-[#667085]">ضريبة القيمة المضافة ({vatRate}%)</span>
                   <span className="text-[#101828] font-semibold">
-                    {((selectedItem.price * vatRate) / 100).toFixed(2)} ر.س
+                    {vatAmount.toFixed(2)} ر.س
                   </span>
                 </div>
                 <div className="flex justify-between border-t border-gray-200 pt-1 mt-1">
                   <span className="text-[#101828] font-bold">الإجمالي</span>
                   <span className="text-[#101828] font-bold">
-                    {(selectedItem.price + (selectedItem.price * vatRate) / 100).toFixed(2)} ر.س
+                    {totalAmount.toFixed(2)} ر.س
                   </span>
                 </div>
               </div>
@@ -413,6 +391,99 @@ export default function CustomersPage() {
                 {generatingInvoice ? "جاري الإصدار..." : "إصدار الفاتورة"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* تصميم الفاتورة المخفي - بيتحول لصورة ثم PDF */}
+      {invoiceCustomer && selectedItem && (
+        <div
+          ref={invoiceRef}
+          className="fixed top-0 -left-[9999px] w-[700px] bg-white p-10"
+          dir="rtl"
+        >
+          <div className="flex items-center justify-between border-b border-gray-200 pb-6 mb-6">
+            <div className="flex items-center gap-3">
+              <img
+                src="/images/logo-color.png"
+                alt="غسلة ولمعة"
+                crossOrigin="anonymous"
+                className="w-16 h-16 object-contain"
+              />
+              <div>
+                <h1 className="text-xl font-bold text-[#101828]">غسلة ولمعة</h1>
+                <p className="text-sm text-[#667085]">فاتورة ضريبية</p>
+              </div>
+            </div>
+            <div className="text-left">
+              <p className="text-sm text-[#667085]">التاريخ</p>
+              <p className="text-sm font-semibold text-[#101828]">
+                {new Date().toLocaleDateString("ar-EG")}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mb-8">
+            <div>
+              <p className="text-xs text-[#667085] mb-1">اسم العميل</p>
+              <p className="text-sm font-semibold text-[#101828]">
+                {invoiceCustomer.name}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-[#667085] mb-1">رقم الجوال</p>
+              <p className="text-sm font-semibold text-[#101828]">
+                {invoiceCustomer.phone}
+              </p>
+            </div>
+          </div>
+
+          <table className="w-full text-sm mb-8 border border-gray-200 rounded-lg overflow-hidden">
+            <thead>
+              <tr className="bg-[#19B9C6] text-white text-right">
+                <th className="px-4 py-3 font-semibold">البيان</th>
+                <th className="px-4 py-3 font-semibold">التاريخ</th>
+                <th className="px-4 py-3 font-semibold">المبلغ</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-t border-gray-100">
+                <td className="px-4 py-3">{selectedItem.label}</td>
+                <td className="px-4 py-3">
+                  {new Date(selectedItem.date).toLocaleDateString("ar-EG")}
+                </td>
+                <td className="px-4 py-3">{selectedItem.price.toFixed(2)} ر.س</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div className="flex justify-start">
+            <div className="w-64 space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-[#667085]">المبلغ قبل الضريبة</span>
+                <span className="text-[#101828] font-semibold">
+                  {selectedItem.price.toFixed(2)} ر.س
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#667085]">
+                  ضريبة القيمة المضافة ({vatRate}%)
+                </span>
+                <span className="text-[#101828] font-semibold">
+                  {vatAmount.toFixed(2)} ر.س
+                </span>
+              </div>
+              <div className="flex justify-between border-t border-gray-200 pt-2">
+                <span className="text-[#101828] font-bold">الإجمالي شامل الضريبة</span>
+                <span className="text-[#101828] font-bold">
+                  {totalAmount.toFixed(2)} ر.س
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-10 pt-6 border-t border-gray-100 text-center text-xs text-[#667085]">
+            شكرًا لتعاملكم مع غسلة ولمعة
           </div>
         </div>
       )}
