@@ -12,6 +12,19 @@ interface SettingsData {
   workEndHour: number;
 }
 
+function to12Hour(h24: number) {
+  const period = h24 < 12 ? "ص" : "م";
+  let hour12 = h24 % 12;
+  if (hour12 === 0) hour12 = 12;
+  return { hour12, period };
+}
+
+function to24Hour(hour12: number, period: string) {
+  let h = hour12 % 12;
+  if (period === "م") h += 12;
+  return h;
+}
+
 export default function SettingsPage() {
   const [settings, setSettings] = useState<SettingsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -58,8 +71,6 @@ export default function SettingsPage() {
     }
   };
 
-  const hourOptions = Array.from({ length: 24 }, (_, i) => i);
-
   if (loading || !settings) {
     return (
       <div className="p-6" dir="rtl">
@@ -68,7 +79,7 @@ export default function SettingsPage() {
     );
   }
 
-    return (
+  return (
     <div className="p-6" dir="rtl">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-[#101828]">الإعدادات</h1>
@@ -76,81 +87,119 @@ export default function SettingsPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
-
-      <div className="bg-white rounded-2xl shadow-sm p-6">
-        <h2 className="text-text-main text-base font-extrabold mb-1">ساعات العمل</h2>
-        <p className="text-text-secondary text-xs mb-4">
-          المواعيد المتاحة للحجز في الموقع (العادي والباقات الشهرية) هتتولد تلقائيًا بفاصل ساعة بين كل الفترة دي
-        </p>
-        <div className="flex items-center gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-text-main text-xs font-bold">من الساعة</label>
-            <select
-              value={settings.workStartHour}
-              onChange={(e) => handleChange("workStartHour", Number(e.target.value))}
-              className="bg-[#F4F7F8] rounded-xl px-4 py-2.5 text-sm outline-none"
-            >
-              {hourOptions.map((h) => (
-                <option key={h} value={h}>
-                  {String(h).padStart(2, "0")}:00
-                </option>
-              ))}
-            </select>
-          </div>
-          <span className="text-text-secondary mt-5">إلى</span>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-text-main text-xs font-bold">الساعة</label>
-            <select
-              value={settings.workEndHour}
-              onChange={(e) => handleChange("workEndHour", Number(e.target.value))}
-              className="bg-[#F4F7F8] rounded-xl px-4 py-2.5 text-sm outline-none"
-            >
-              {hourOptions.map((h) => (
-                <option key={h} value={h}>
-                  {String(h).padStart(2, "0")}:00
-                </option>
-              ))}
-            </select>
+        <div className="bg-white rounded-2xl shadow-sm p-6">
+          <h2 className="text-text-main text-base font-extrabold mb-1">ساعات العمل</h2>
+          <p className="text-text-secondary text-xs mb-4">
+            المواعيد المتاحة للحجز في الموقع (العادي والباقات الشهرية) هتتولد تلقائيًا بفاصل ساعة بين كل فترة
+          </p>
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-text-main text-xs font-bold">من الساعة</label>
+              <div className="flex gap-2">
+                <select
+                  value={to12Hour(settings.workStartHour).hour12}
+                  onChange={(e) =>
+                    handleChange(
+                      "workStartHour",
+                      to24Hour(Number(e.target.value), to12Hour(settings.workStartHour).period)
+                    )
+                  }
+                  className="bg-[#F4F7F8] rounded-xl px-3 py-2.5 text-sm outline-none"
+                >
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+                    <option key={h} value={h}>
+                      {String(h).padStart(2, "0")}:00
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={to12Hour(settings.workStartHour).period}
+                  onChange={(e) =>
+                    handleChange(
+                      "workStartHour",
+                      to24Hour(to12Hour(settings.workStartHour).hour12, e.target.value)
+                    )
+                  }
+                  className="bg-[#F4F7F8] rounded-xl px-3 py-2.5 text-sm outline-none"
+                >
+                  <option value="ص">ص</option>
+                  <option value="م">م</option>
+                </select>
+              </div>
+            </div>
+            <span className="text-text-secondary mt-5">إلى</span>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-text-main text-xs font-bold">الساعة</label>
+              <div className="flex gap-2">
+                <select
+                  value={to12Hour(settings.workEndHour).hour12}
+                  onChange={(e) =>
+                    handleChange(
+                      "workEndHour",
+                      to24Hour(Number(e.target.value), to12Hour(settings.workEndHour).period)
+                    )
+                  }
+                  className="bg-[#F4F7F8] rounded-xl px-3 py-2.5 text-sm outline-none"
+                >
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+                    <option key={h} value={h}>
+                      {String(h).padStart(2, "0")}:00
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={to12Hour(settings.workEndHour).period}
+                  onChange={(e) =>
+                    handleChange(
+                      "workEndHour",
+                      to24Hour(to12Hour(settings.workEndHour).hour12, e.target.value)
+                    )
+                  }
+                  className="bg-[#F4F7F8] rounded-xl px-3 py-2.5 text-sm outline-none"
+                >
+                  <option value="ص">ص</option>
+                  <option value="م">م</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="bg-white rounded-2xl shadow-sm p-6 mb-5">
-        <h2 className="text-text-main text-base font-extrabold mb-4">البيانات الأساسية</h2>
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-text-main text-xs font-bold">اسم الشركة</label>
-            <input
-              type="text"
-              value={settings.companyName}
-              onChange={(e) => handleChange("companyName", e.target.value)}
-              className="bg-[#F4F7F8] rounded-xl px-4 py-2.5 text-sm outline-none"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-text-main text-xs font-bold">رقم التواصل / واتساب</label>
-            <input
-              type="text"
-              dir="ltr"
-              value={settings.supportPhone}
-              onChange={(e) => handleChange("supportPhone", e.target.value)}
-              placeholder="05XXXXXXXX"
-              className="bg-[#F4F7F8] rounded-xl px-4 py-2.5 text-sm outline-none text-right"
-            />
-          </div>
-                   <div className="flex flex-col gap-1.5">
-            <label className="text-text-main text-xs font-bold">البريد الإلكتروني للدعم</label>
-            <input
-              type="email"
-              dir="ltr"
-              value={settings.supportEmail}
-              onChange={(e) => handleChange("supportEmail", e.target.value)}
-              className="bg-[#F4F7F8] rounded-xl px-4 py-2.5 text-sm outline-none text-right"
-            />
+        <div className="bg-white rounded-2xl shadow-sm p-6">
+          <h2 className="text-text-main text-base font-extrabold mb-4">البيانات الأساسية</h2>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-text-main text-xs font-bold">اسم الشركة</label>
+              <input
+                type="text"
+                value={settings.companyName}
+                onChange={(e) => handleChange("companyName", e.target.value)}
+                className="bg-[#F4F7F8] rounded-xl px-4 py-2.5 text-sm outline-none"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-text-main text-xs font-bold">رقم التواصل / واتساب</label>
+              <input
+                type="text"
+                dir="ltr"
+                value={settings.supportPhone}
+                onChange={(e) => handleChange("supportPhone", e.target.value)}
+                placeholder="05XXXXXXXX"
+                className="bg-[#F4F7F8] rounded-xl px-4 py-2.5 text-sm outline-none text-right"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-text-main text-xs font-bold">البريد الإلكتروني للدعم</label>
+              <input
+                type="email"
+                dir="ltr"
+                value={settings.supportEmail}
+                onChange={(e) => handleChange("supportEmail", e.target.value)}
+                className="bg-[#F4F7F8] rounded-xl px-4 py-2.5 text-sm outline-none text-right"
+              />
+            </div>
           </div>
         </div>
-      </div>
-
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm p-6 mb-5">
