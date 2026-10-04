@@ -206,20 +206,9 @@ export default function CarTypesPage() {
     }
   };
 
-  const handleAssignCarType = async (serviceId: string, carTypeId: string) => {
-    try {
-      await fetch(`/api/admin/services/${serviceId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ carTypeId }),
-      });
-      await loadData();
-    } catch {
-      setError("حدث خطأ أثناء ربط الخدمة بنوع السيارة");
-    }
-  };
+  
 
-  const unassignedServices = services.filter((s) => !s.carTypeId);
+
 
   return (
     <div className="p-8 flex flex-col gap-7">
@@ -448,35 +437,7 @@ export default function CarTypesPage() {
         })
       )}
 
-      {/* خدمات مش مربوطة بنوع سيارة */}
-      {unassignedServices.length > 0 && (
-        <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(16,24,40,0.05)] p-5 flex flex-col gap-3 border-2 border-amber-200">
-          <div className="flex flex-col gap-1">
-            <span className="text-text-main text-sm font-bold">⚠️ خدمات لسه مش مربوطة بنوع سيارة</span>
-            <span className="text-text-secondary text-xs">اختار نوع السيارة المناسب لكل خدمة من القايمة جنبها</span>
-          </div>
-          {unassignedServices.map((service) => (
-            <div key={service.id} className="flex items-center justify-between border border-[#EEF2F3] rounded-xl px-4 py-3">
-              <div className="flex flex-col gap-0.5">
-                <span className="text-text-main text-sm font-bold">{service.name}</span>
-                <span className="text-text-secondary text-xs">
-                  {service.description} — {service.price} ر.س
-                </span>
-              </div>
-              <select
-                defaultValue=""
-                onChange={(e) => e.target.value && handleAssignCarType(service.id, e.target.value)}
-                className="bg-[#F4F7F8] rounded-lg px-3 py-2 text-sm outline-none border border-[#EEF2F3]"
-              >
-                <option value="">اختر نوع السيارة...</option>
-                {carTypes.map((ct) => (
-                  <option key={ct.id} value={ct.id}>{ct.name}</option>
-                ))}
-              </select>
-            </div>
-          ))}
-        </div>
-      )}
+     
     </div>
   );
 }
