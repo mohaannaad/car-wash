@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Settings" ADD COLUMN     "vatRate" DOUBLE PRECISION NOT NULL DEFAULT 15;

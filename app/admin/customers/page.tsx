@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 
 interface Customer {
   id: string;
@@ -13,12 +14,29 @@ interface Customer {
   totalSpent: number;
 }
 
+interface HistoryItem {
+  id: string;
+  type: "order" | "subscription";
+  label: string;
+  price: number;
+  date: string;
+}
+
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+
+  // حالة مودال الفاتورة
+  const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
+  const [invoiceCustomer, setInvoiceCustomer] = useState<Customer | null>(null);
+  const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<HistoryItem | null>(null);
+  const [vatRate, setVatRate] = useState<number>(15);
+  const [generatingInvoice, setGeneratingInvoice] = useState(false);
 
   useEffect(() => {
     fetchCustomers();
@@ -83,23 +101,118 @@ export default function CustomersPage() {
     }
   };
 
-  const handleExportPDF = () => {
-    const doc = new jsPDF();
-    doc.text("Customers List", 14, 15);
+  // تحميل بيانات العملاء ملف إكسيل بدل PDF
+  const handleExportExcel = () => {
+    const rows = filteredCustomers.map((c) => ({
+      Name: c.name,
+      Phone: c.phone,
+      Orders: c.ordersCount,
+      "Total Spent (SAR)": c.totalSpent,
+      Registered: new Date(c.createdAt).toLocaleDateString("en-GB"),
+    }));
 
-    autoTable(doc, {
-      startY: 20,
-      head: [["Name", "Phone", "Orders", "Total Spent (SAR)", "Registered"]],
-      body: filteredCustomers.map((c) => [
-        c.name,
-        c.phone,
-        c.ordersCount.toString(),
-        c.totalSpent.toString(),
-        new Date(c.createdAt).toLocaleDateString("en-GB"),
-      ]),
-    });
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Customers");
+    XLSX.writeFile(workbook, "customers.xlsx");
+  };
 
-    doc.save("customers.pdf");
+  // فتح مودال اصدار الفاتورة لعميل معين
+  const handleOpenInvoiceModal = async (customer: Customer) => {
+    setInvoiceCustomer(customer);
+    setInvoiceModalOpen(true);
+    setSelectedItem(null);
+    setHistoryItems([]);
+    setLoadingHistory(true);
+
+    try {
+      const [historyRes, settingsRes] = await Promise.all([
+        fetch(`/api/admin/customers/${customer.id}/history`),
+        fetch("/api/admin/settings"),
+      ]);
+
+      const historyData = await historyRes.json();
+      const combined: HistoryItem[] = [
+        ...(historyData.orders || []),
+        ...(historyData.subscriptions || []),
+      ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      setHistoryItems(combined);
+
+      const settingsData = await settingsRes.json();
+      setVatRate(settingsData.vatRate ?? 15);
+    } catch (error) {
+      console.error(error);
+      alert("حدث خطأ أثناء جلب بيانات العميل");
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  const handleCloseInvoiceModal = () => {
+    setInvoiceModalOpen(false);
+    setInvoiceCustomer(null);
+    setHistoryItems([]);
+    setSelectedItem(null);
+  };
+
+  // توليد ملف PDF للفاتورة
+  const handleGenerateInvoice = () => {
+    if (!selectedItem || !invoiceCustomer) {
+      alert("من فضلك اختار الطلب أو الباقة المطلوب إصدار فاتورة لها");
+      return;
+    }
+
+    setGeneratingInvoice(true);
+    try {
+      const subtotal = selectedItem.price;
+      const vatAmount = (subtotal * vatRate) / 100;
+      const total = subtotal + vatAmount;
+
+      const doc = new jsPDF();
+
+      doc.setFontSize(18);
+      doc.text("Tax Invoice", 14, 18);
+
+      doc.setFontSize(10);
+      doc.text(`Invoice Date: ${new Date().toLocaleDateString("en-GB")}`, 14, 28);
+      doc.text(`Customer Name: ${invoiceCustomer.name}`, 14, 34);
+      doc.text(`Phone: ${invoiceCustomer.phone}`, 14, 40);
+
+      autoTable(doc, {
+        startY: 48,
+        head: [["Description", "Date", "Amount (SAR)"]],
+        body: [
+          [
+            selectedItem.label,
+            new Date(selectedItem.date).toLocaleDateString("en-GB"),
+            subtotal.toFixed(2),
+          ],
+        ],
+      });
+
+      // @ts-expect-error jspdf-autotable attaches lastAutoTable at runtime
+      const finalY = doc.lastAutoTable.finalY || 60;
+
+      doc.setFontSize(11);
+      doc.text(`Subtotal: ${subtotal.toFixed(2)} SAR`, 140, finalY + 10, {
+        align: "left",
+      });
+      doc.text(`VAT (${vatRate}%): ${vatAmount.toFixed(2)} SAR`, 140, finalY + 17, {
+        align: "left",
+      });
+      doc.setFont("helvetica", "bold");
+      doc.text(`Total: ${total.toFixed(2)} SAR`, 140, finalY + 25, {
+        align: "left",
+      });
+
+      doc.save(`invoice-${invoiceCustomer.name}-${Date.now()}.pdf`);
+      handleCloseInvoiceModal();
+    } catch (error) {
+      console.error(error);
+      alert("حدث خطأ أثناء إصدار الفاتورة");
+    } finally {
+      setGeneratingInvoice(false);
+    }
   };
 
   return (
@@ -113,10 +226,10 @@ export default function CustomersPage() {
         </div>
         <div className="flex gap-3">
           <button
-            onClick={handleExportPDF}
+            onClick={handleExportExcel}
             className="px-4 py-2 rounded-lg bg-white border border-gray-200 text-sm font-semibold text-[#101828] hover:bg-gray-50"
           >
-            تحميل PDF
+            تحميل Excel
           </button>
           <button
             onClick={handleBulkDelete}
@@ -180,13 +293,21 @@ export default function CustomersPage() {
                     {new Date(c.createdAt).toLocaleDateString("ar-EG")}
                   </td>
                   <td className="px-4 py-3">
-                    <button
-                      onClick={() => handleDelete(c.id, c.name)}
-                      disabled={deletingId === c.id}
-                      className="text-red-600 text-sm font-semibold hover:underline disabled:opacity-50"
-                    >
-                      {deletingId === c.id ? "جاري الحذف..." : "حذف"}
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => handleOpenInvoiceModal(c)}
+                        className="text-[#19B9C6] text-sm font-semibold hover:underline"
+                      >
+                        فاتورة
+                      </button>
+                      <button
+                        onClick={() => handleDelete(c.id, c.name)}
+                        disabled={deletingId === c.id}
+                        className="text-red-600 text-sm font-semibold hover:underline disabled:opacity-50"
+                      >
+                        {deletingId === c.id ? "جاري الحذف..." : "حذف"}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -194,6 +315,107 @@ export default function CustomersPage() {
           </tbody>
         </table>
       </div>
+
+      {/* مودال إصدار الفاتورة */}
+      {invoiceModalOpen && invoiceCustomer && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-[#101828]">
+                إصدار فاتورة - {invoiceCustomer.name}
+              </h2>
+              <button
+                onClick={handleCloseInvoiceModal}
+                className="text-[#667085] hover:text-[#101828] text-xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+
+            {loadingHistory ? (
+              <p className="text-center text-[#667085] py-6">جاري التحميل...</p>
+            ) : historyItems.length === 0 ? (
+              <p className="text-center text-[#667085] py-6">
+                لا يوجد طلبات أو باقات لهذا العميل
+              </p>
+            ) : (
+              <div className="space-y-2 mb-5">
+                {historyItems.map((item) => (
+                  <label
+                    key={`${item.type}-${item.id}`}
+                    className={`flex items-center justify-between gap-3 p-3 rounded-lg border cursor-pointer ${
+                      selectedItem?.id === item.id && selectedItem?.type === item.type
+                        ? "border-[#19B9C6] bg-[#19B9C6]/5"
+                        : "border-gray-200"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="radio"
+                        name="historyItem"
+                        checked={
+                          selectedItem?.id === item.id && selectedItem?.type === item.type
+                        }
+                        onChange={() => setSelectedItem(item)}
+                      />
+                      <div>
+                        <p className="text-sm font-semibold text-[#101828]">
+                          {item.label}
+                        </p>
+                        <p className="text-xs text-[#667085]">
+                          {new Date(item.date).toLocaleDateString("ar-EG")}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-sm font-semibold text-[#101828] whitespace-nowrap">
+                      {item.price} ر.س
+                    </span>
+                  </label>
+                ))}
+              </div>
+            )}
+
+            {selectedItem && (
+              <div className="bg-gray-50 rounded-lg p-4 mb-5 text-sm space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-[#667085]">المبلغ</span>
+                  <span className="text-[#101828] font-semibold">
+                    {selectedItem.price.toFixed(2)} ر.س
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#667085]">ضريبة القيمة المضافة ({vatRate}%)</span>
+                  <span className="text-[#101828] font-semibold">
+                    {((selectedItem.price * vatRate) / 100).toFixed(2)} ر.س
+                  </span>
+                </div>
+                <div className="flex justify-between border-t border-gray-200 pt-1 mt-1">
+                  <span className="text-[#101828] font-bold">الإجمالي</span>
+                  <span className="text-[#101828] font-bold">
+                    {(selectedItem.price + (selectedItem.price * vatRate) / 100).toFixed(2)} ر.س
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleCloseInvoiceModal}
+                className="flex-1 px-4 py-2.5 rounded-lg border border-gray-200 text-sm font-semibold text-[#101828] hover:bg-gray-50"
+              >
+                إلغاء
+              </button>
+              <button
+                onClick={handleGenerateInvoice}
+                disabled={!selectedItem || generatingInvoice}
+                className="flex-1 px-4 py-2.5 rounded-lg bg-[#19B9C6] text-sm font-semibold text-white hover:bg-[#15a3af] disabled:opacity-50"
+              >
+                {generatingInvoice ? "جاري الإصدار..." : "إصدار الفاتورة"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
