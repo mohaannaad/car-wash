@@ -2,11 +2,6 @@
 
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 
-type CarTypeData = {
-  id: string;
-  name: string;
-} | null;
-
 type PackageData = {
   id: string;
   name: string;
@@ -31,7 +26,6 @@ type CustomerData = {
 };
 
 type SubscriptionData = {
-  carType: CarTypeData;
   package: PackageData;
   appointments: Appointment[];
   area: AreaData;
@@ -40,7 +34,6 @@ type SubscriptionData = {
 };
 
 const emptySubscription: SubscriptionData = {
-  carType: null,
   package: null,
   appointments: [],
   area: null,
@@ -52,7 +45,6 @@ const STORAGE_KEY = "carwash_subscription_state";
 
 type SubscriptionContextType = {
   subscription: SubscriptionData;
-  setCarType: (carType: CarTypeData) => void;
   setPackage: (pkg: PackageData) => void;
   setAppointments: (appointments: Appointment[]) => void;
   setArea: (area: AreaData) => void;
@@ -71,8 +63,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     try {
       const saved = sessionStorage.getItem(STORAGE_KEY);
       if (saved) {
-        const parsed = JSON.parse(saved);
-        setSubscription({ ...emptySubscription, ...parsed });
+        setSubscription(JSON.parse(saved));
       }
     } catch {
       // تجاهل
@@ -90,8 +81,6 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     }
   }, [subscription, hydrated]);
 
-  const setCarType = (carType: CarTypeData) =>
-    setSubscription((prev) => ({ ...prev, carType, package: null, appointments: [] }));
   const setPackage = (pkg: PackageData) => setSubscription((prev) => ({ ...prev, package: pkg, appointments: [] }));
   const setAppointments = (appointments: Appointment[]) => setSubscription((prev) => ({ ...prev, appointments }));
   const setArea = (area: AreaData) => setSubscription((prev) => ({ ...prev, area }));
@@ -109,7 +98,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   return (
     <SubscriptionContext.Provider
-      value={{ subscription, setCarType, setPackage, setAppointments, setArea, setLocation, setCustomer, resetSubscription }}
+      value={{ subscription, setPackage, setAppointments, setArea, setLocation, setCustomer, resetSubscription }}
     >
       {children}
     </SubscriptionContext.Provider>

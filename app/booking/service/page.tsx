@@ -14,18 +14,22 @@ type Service = {
 
 export default function ServiceStep() {
   const router = useRouter();
-  const { setService } = useBooking();
+  const { booking, setService } = useBooking();
 
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/services")
+    if (!booking.carType) {
+      router.replace("/booking");
+      return;
+    }
+    fetch(`/api/services?carTypeId=${booking.carType.id}`)
       .then((res) => res.json())
       .then((data) => setServices(data))
       .finally(() => setLoading(false));
-  }, []);
+  }, [booking.carType, router]);
 
   const selected = services.find((s) => s.id === selectedId);
 
@@ -34,6 +38,8 @@ export default function ServiceStep() {
     setService({ id: selected.id, name: selected.name, price: selected.price });
     router.push("/booking/extras");
   };
+
+  if (!booking.carType) return null;
 
   return (
     <main className="h-dvh flex flex-col bg-bg-page overflow-hidden">
@@ -46,7 +52,7 @@ export default function ServiceStep() {
         {loading ? (
           <p className="text-center text-text-secondary text-sm py-8">جاري التحميل...</p>
         ) : services.length === 0 ? (
-          <p className="text-center text-text-secondary text-sm py-8">لا توجد خدمات متاحة حاليًا</p>
+          <p className="text-center text-text-secondary text-sm py-8">لا توجد خدمات متاحة لنوع السيارة ده حاليًا</p>
         ) : (
           services.map((service) => {
             const isSelected = selectedId === service.id;

@@ -16,7 +16,7 @@ model CarType {
   isActive  Boolean   @default(true)
   createdAt DateTime  @default(now())
   orders    Order[]
-  packages  Package[]
+  services  Service[]
 }
 
 model Service {
@@ -26,6 +26,8 @@ model Service {
   price           Int
   durationMinutes Int
   isActive        Boolean  @default(true)
+  carType         CarType? @relation(fields: [carTypeId], references: [id], onDelete: SetNull)
+  carTypeId       String?
   createdAt       DateTime @default(now())
   orders          Order[]
 }
@@ -50,8 +52,6 @@ model Package {
   badge         String?
   features      String[]
   isActive      Boolean        @default(true)
-  carType       CarType?       @relation(fields: [carTypeId], references: [id], onDelete: SetNull)
-  carTypeId     String?
   createdAt     DateTime       @default(now())
   subscriptions Subscription[]
 }

@@ -15,10 +15,10 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, description, price, durationMinutes } = body;
+    const { name, description, price, durationMinutes, carTypeId } = body;
 
-    if (!name || !price || !durationMinutes) {
-      return NextResponse.json({ error: "البيانات ناقصة" }, { status: 400 });
+    if (!name || !price || !durationMinutes || !carTypeId) {
+      return NextResponse.json({ error: "البيانات ناقصة، لازم تحدد نوع السيارة" }, { status: 400 });
     }
 
     const service = await prisma.service.create({
@@ -27,6 +27,7 @@ export async function POST(request: Request) {
         description: description?.trim() || "",
         price: Number(price),
         durationMinutes: Number(durationMinutes),
+        carTypeId,
       },
     });
 

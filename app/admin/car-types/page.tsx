@@ -10,23 +10,21 @@ type CarType = {
   createdAt: string;
 };
 
-type Package = {
+type Service = {
   id: string;
   name: string;
-  washCount: number;
-  serviceLabel: string;
+  description: string;
   price: number;
-  originalPrice: number;
-  badge: string | null;
+  durationMinutes: number;
   isActive: boolean;
   carTypeId: string | null;
 };
 
-const emptyPackageForm = { name: "", washCount: "", serviceLabel: "", price: "", originalPrice: "", badge: "" };
+const emptyServiceForm = { name: "", description: "", price: "", durationMinutes: "" };
 
 export default function CarTypesPage() {
   const [carTypes, setCarTypes] = useState<CarType[]>([]);
-  const [packages, setPackages] = useState<Package[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -35,25 +33,25 @@ export default function CarTypesPage() {
   const [newImage, setNewImage] = useState<string | null>(null);
   const [submittingCarType, setSubmittingCarType] = useState(false);
 
-  // إضافة باقة
+  // إضافة خدمة
   const [addingForCarType, setAddingForCarType] = useState<string | null>(null);
-  const [packageForm, setPackageForm] = useState(emptyPackageForm);
-  const [submittingPackage, setSubmittingPackage] = useState(false);
+  const [serviceForm, setServiceForm] = useState(emptyServiceForm);
+  const [submittingService, setSubmittingService] = useState(false);
 
-  // تعديل باقة
+  // تعديل خدمة
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState(emptyPackageForm);
+  const [editForm, setEditForm] = useState(emptyServiceForm);
   const [savingEdit, setSavingEdit] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const [carTypesRes, packagesRes] = await Promise.all([
+      const [carTypesRes, servicesRes] = await Promise.all([
         fetch("/api/admin/car-types"),
-        fetch("/api/admin/packages"),
+        fetch("/api/admin/services"),
       ]);
       setCarTypes(await carTypesRes.json());
-      setPackages(await packagesRes.json());
+      setServices(await servicesRes.json());
     } catch {
       setError("حصل خطأ في تحميل البيانات");
     } finally {
@@ -107,7 +105,7 @@ export default function CarTypesPage() {
   };
 
   const handleDeleteCarType = async (id: string) => {
-    if (!confirm("متأكد إنك عايز تحذف نوع السيارة ده؟ (لازم ملوش باقات مرتبطة بيه الأول)")) return;
+    if (!confirm("متأكد إنك عايز تحذف نوع السيارة ده؟ (لازم ملوش خدمات مرتبطة بيه الأول)")) return;
     try {
       const res = await fetch(`/api/admin/car-types/${id}`, { method: "DELETE" });
       const data = await res.json();
@@ -122,40 +120,40 @@ export default function CarTypesPage() {
     }
   };
 
-  const startAddPackage = (carTypeId: string) => {
+  const startAddService = (carTypeId: string) => {
     setAddingForCarType(carTypeId);
-    setPackageForm(emptyPackageForm);
+    setServiceForm(emptyServiceForm);
   };
 
-  const cancelAddPackage = () => {
+  const cancelAddService = () => {
     setAddingForCarType(null);
-    setPackageForm(emptyPackageForm);
+    setServiceForm(emptyServiceForm);
   };
 
-  const submitAddPackage = async () => {
-    if (!addingForCarType || !packageForm.name.trim() || !packageForm.washCount || !packageForm.price || !packageForm.originalPrice) return;
-    setSubmittingPackage(true);
+  const submitAddService = async () => {
+    if (!addingForCarType || !serviceForm.name.trim() || !serviceForm.price || !serviceForm.durationMinutes) return;
+    setSubmittingService(true);
     setError("");
     try {
-      const res = await fetch("/api/admin/packages", {
+      const res = await fetch("/api/admin/services", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...packageForm, features: [], carTypeId: addingForCarType }),
+        body: JSON.stringify({ ...serviceForm, carTypeId: addingForCarType }),
       });
       if (!res.ok) throw new Error();
       setAddingForCarType(null);
-      setPackageForm(emptyPackageForm);
+      setServiceForm(emptyServiceForm);
       await loadData();
     } catch {
-      setError("حدث خطأ أثناء إضافة الباقة");
+      setError("حدث خطأ أثناء إضافة الخدمة");
     } finally {
-      setSubmittingPackage(false);
+      setSubmittingService(false);
     }
   };
 
-  const handleTogglePackageActive = async (id: string, current: boolean) => {
+  const handleToggleServiceActive = async (id: string, current: boolean) => {
     try {
-      await fetch(`/api/admin/packages/${id}`, {
+      await fetch(`/api/admin/services/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive: !current }),
@@ -166,26 +164,24 @@ export default function CarTypesPage() {
     }
   };
 
-  const startEditPackage = (pkg: Package) => {
-    setEditingId(pkg.id);
+  const startEditService = (service: Service) => {
+    setEditingId(service.id);
     setEditForm({
-      name: pkg.name,
-      washCount: String(pkg.washCount),
-      serviceLabel: pkg.serviceLabel,
-      price: String(pkg.price),
-      originalPrice: String(pkg.originalPrice),
-      badge: pkg.badge || "",
+      name: service.name,
+      description: service.description,
+      price: String(service.price),
+      durationMinutes: String(service.durationMinutes),
     });
   };
 
-  const cancelEditPackage = () => setEditingId(null);
+  const cancelEditService = () => setEditingId(null);
 
-  const saveEditPackage = async (id: string) => {
-    if (!editForm.name.trim() || !editForm.washCount || !editForm.price || !editForm.originalPrice) return;
+  const saveEditService = async (id: string) => {
+    if (!editForm.name.trim() || !editForm.price || !editForm.durationMinutes) return;
     setSavingEdit(true);
     setError("");
     try {
-      const res = await fetch(`/api/admin/packages/${id}`, {
+      const res = await fetch(`/api/admin/services/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editForm),
@@ -200,36 +196,36 @@ export default function CarTypesPage() {
     }
   };
 
-  const handleDeletePackage = async (id: string) => {
-    if (!confirm("هل أنت متأكد من رغبتك في حذف الباقة؟")) return;
+  const handleDeleteService = async (id: string) => {
+    if (!confirm("هل أنت متأكد من رغبتك في حذف الخدمة؟")) return;
     try {
-      await fetch(`/api/admin/packages/${id}`, { method: "DELETE" });
+      await fetch(`/api/admin/services/${id}`, { method: "DELETE" });
       await loadData();
     } catch {
       setError("حدث خطأ أثناء الحذف");
     }
   };
 
-  const handleAssignCarType = async (packageId: string, carTypeId: string) => {
+  const handleAssignCarType = async (serviceId: string, carTypeId: string) => {
     try {
-      await fetch(`/api/admin/packages/${packageId}`, {
+      await fetch(`/api/admin/services/${serviceId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ carTypeId }),
       });
       await loadData();
     } catch {
-      setError("حدث خطأ أثناء ربط الباقة بنوع السيارة");
+      setError("حدث خطأ أثناء ربط الخدمة بنوع السيارة");
     }
   };
 
-  const unassignedPackages = packages.filter((p) => !p.carTypeId);
+  const unassignedServices = services.filter((s) => !s.carTypeId);
 
   return (
     <div className="p-8 flex flex-col gap-7">
       <div className="flex flex-col gap-1">
-        <h1 className="text-text-main text-2xl font-extrabold">أنواع السيارات والباقات</h1>
-        <p className="text-text-secondary text-sm">إدارة أنواع السيارات وباقات كل نوع منها</p>
+        <h1 className="text-text-main text-2xl font-extrabold">أنواع السيارات والخدمات</h1>
+        <p className="text-text-secondary text-sm">إدارة أنواع السيارات وخدمات الغسيل الخاصة بكل نوع</p>
       </div>
 
       {/* نموذج إضافة نوع سيارة */}
@@ -281,7 +277,7 @@ export default function CarTypesPage() {
         <div className="bg-white rounded-2xl p-8 text-center text-text-secondary text-sm">مفيش أنواع سيارات مضافة لسه</div>
       ) : (
         carTypes.map((carType) => {
-          const carTypePackages = packages.filter((p) => p.carTypeId === carType.id);
+          const carTypeServices = services.filter((s) => s.carTypeId === carType.id);
           return (
             <div key={carType.id} className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(16,24,40,0.05)] overflow-hidden">
               {/* رأس نوع السيارة */}
@@ -296,7 +292,7 @@ export default function CarTypesPage() {
                   )}
                   <div>
                     <p className="text-text-main text-base font-extrabold">{carType.name}</p>
-                    <p className="text-text-secondary text-xs">{carTypePackages.length} باقة</p>
+                    <p className="text-text-secondary text-xs">{carTypeServices.length} خدمة</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -314,38 +310,29 @@ export default function CarTypesPage() {
                 </div>
               </div>
 
-              {/* باقات النوع ده */}
+              {/* خدمات النوع ده */}
               <div className="p-5 flex flex-col gap-3">
-                {carTypePackages.length === 0 && addingForCarType !== carType.id && (
-                  <p className="text-text-secondary text-sm text-center py-3">مفيش باقات لنوع السيارة ده لسه</p>
+                {carTypeServices.length === 0 && addingForCarType !== carType.id && (
+                  <p className="text-text-secondary text-sm text-center py-3">مفيش خدمات لنوع السيارة ده لسه</p>
                 )}
 
-                {carTypePackages.map((pkg) =>
-                  editingId === pkg.id ? (
-                    <div key={pkg.id} className="grid grid-cols-6 gap-2 bg-primary-light/30 rounded-xl p-3 items-center">
+                {carTypeServices.map((service) =>
+                  editingId === service.id ? (
+                    <div key={service.id} className="grid grid-cols-4 gap-2 bg-primary-light/30 rounded-xl p-3 items-center">
                       <input
                         type="text"
                         value={editForm.name}
                         onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                        className="col-span-2 bg-white rounded-lg px-3 py-2 text-sm outline-none border border-[#EEF2F3]"
-                        placeholder="اسم الباقة"
+                        className="bg-white rounded-lg px-3 py-2 text-sm outline-none border border-[#EEF2F3]"
+                        placeholder="اسم الخدمة"
                       />
                       <input
                         type="text"
-                        value={editForm.serviceLabel}
-                        onChange={(e) => setEditForm({ ...editForm, serviceLabel: e.target.value })}
+                        value={editForm.description}
+                        onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                         className="bg-white rounded-lg px-3 py-2 text-sm outline-none border border-[#EEF2F3]"
-                        placeholder="نوع الخدمة"
+                        placeholder="وصف مختصر"
                       />
-                      <select
-                        value={editForm.washCount}
-                        onChange={(e) => setEditForm({ ...editForm, washCount: e.target.value })}
-                        className="bg-white rounded-lg px-2 py-2 text-sm outline-none border border-[#EEF2F3]"
-                      >
-                        {[2, 3, 4].map((c) => (
-                          <option key={c} value={c}>{c}</option>
-                        ))}
-                      </select>
                       <input
                         type="number"
                         value={editForm.price}
@@ -355,48 +342,47 @@ export default function CarTypesPage() {
                       />
                       <input
                         type="number"
-                        value={editForm.originalPrice}
-                        onChange={(e) => setEditForm({ ...editForm, originalPrice: e.target.value })}
+                        value={editForm.durationMinutes}
+                        onChange={(e) => setEditForm({ ...editForm, durationMinutes: e.target.value })}
                         className="bg-white rounded-lg px-3 py-2 text-sm outline-none border border-[#EEF2F3]"
-                        placeholder="السعر الأصلي"
+                        placeholder="المدة (دقيقة)"
                       />
-                      <div className="col-span-6 flex items-center gap-3 mt-1">
+                      <div className="col-span-4 flex items-center gap-3 mt-1">
                         <button
-                          onClick={() => saveEditPackage(pkg.id)}
+                          onClick={() => saveEditService(service.id)}
                           disabled={savingEdit}
                           className="text-emerald-600 text-xs font-bold hover:underline disabled:opacity-50"
                         >
                           حفظ
                         </button>
-                        <button onClick={cancelEditPackage} className="text-text-secondary text-xs font-bold hover:underline">
+                        <button onClick={cancelEditService} className="text-text-secondary text-xs font-bold hover:underline">
                           إلغاء
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <div key={pkg.id} className="flex items-center justify-between border border-[#EEF2F3] rounded-xl px-4 py-3">
+                    <div key={service.id} className="flex items-center justify-between border border-[#EEF2F3] rounded-xl px-4 py-3">
                       <div className="flex flex-col gap-0.5">
                         <div className="flex items-center gap-2">
-                          <span className="text-text-main text-sm font-bold">{pkg.name}</span>
+                          <span className="text-text-main text-sm font-bold">{service.name}</span>
                           <button
-                            onClick={() => handleTogglePackageActive(pkg.id, pkg.isActive)}
+                            onClick={() => handleToggleServiceActive(service.id, service.isActive)}
                             className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                              pkg.isActive ? "bg-emerald-50 text-emerald-600" : "bg-[#F4F7F8] text-text-secondary"
+                              service.isActive ? "bg-emerald-50 text-emerald-600" : "bg-[#F4F7F8] text-text-secondary"
                             }`}
                           >
-                            {pkg.isActive ? "مفعّل" : "متوقف"}
+                            {service.isActive ? "مفعّل" : "متوقف"}
                           </button>
                         </div>
                         <span className="text-text-secondary text-xs">
-                          {pkg.washCount} × {pkg.serviceLabel} — {pkg.price} ر.س
-                          <span className="line-through mr-1">{pkg.originalPrice}</span>
+                          {service.description} — {service.price} ر.س — {service.durationMinutes} دقيقة
                         </span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <button onClick={() => startEditPackage(pkg)} className="text-primary text-xs font-bold hover:underline">
+                        <button onClick={() => startEditService(service)} className="text-primary text-xs font-bold hover:underline">
                           تعديل
                         </button>
-                        <button onClick={() => handleDeletePackage(pkg.id)} className="text-red-500 text-xs font-bold hover:underline">
+                        <button onClick={() => handleDeleteService(service.id)} className="text-red-500 text-xs font-bold hover:underline">
                           حذف
                         </button>
                       </div>
@@ -404,73 +390,56 @@ export default function CarTypesPage() {
                   )
                 )}
 
-                {/* نموذج إضافة باقة جديدة */}
+                {/* نموذج إضافة خدمة جديدة */}
                 {addingForCarType === carType.id ? (
-                  <div className="grid grid-cols-3 gap-2 bg-[#F4F7F8] rounded-xl p-3">
+                  <div className="grid grid-cols-4 gap-2 bg-[#F4F7F8] rounded-xl p-3">
                     <input
                       type="text"
-                      value={packageForm.name}
-                      onChange={(e) => setPackageForm({ ...packageForm, name: e.target.value })}
-                      placeholder="اسم الباقة"
+                      value={serviceForm.name}
+                      onChange={(e) => setServiceForm({ ...serviceForm, name: e.target.value })}
+                      placeholder="اسم الخدمة (مثال: غسيل خارجي)"
                       className="bg-white rounded-lg px-3 py-2 text-sm outline-none border border-[#EEF2F3]"
                     />
-                    <select
-                      value={packageForm.washCount}
-                      onChange={(e) => setPackageForm({ ...packageForm, washCount: e.target.value })}
-                      className="bg-white rounded-lg px-3 py-2 text-sm outline-none border border-[#EEF2F3]"
-                    >
-                      <option value="">عدد الغسلات</option>
-                      {[2, 3, 4].map((c) => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </select>
                     <input
                       type="text"
-                      value={packageForm.serviceLabel}
-                      onChange={(e) => setPackageForm({ ...packageForm, serviceLabel: e.target.value })}
-                      placeholder="نوع الخدمة"
+                      value={serviceForm.description}
+                      onChange={(e) => setServiceForm({ ...serviceForm, description: e.target.value })}
+                      placeholder="وصف مختصر للخدمة"
                       className="bg-white rounded-lg px-3 py-2 text-sm outline-none border border-[#EEF2F3]"
                     />
                     <input
                       type="number"
-                      value={packageForm.price}
-                      onChange={(e) => setPackageForm({ ...packageForm, price: e.target.value })}
-                      placeholder="السعر بعد الخصم"
+                      value={serviceForm.price}
+                      onChange={(e) => setServiceForm({ ...serviceForm, price: e.target.value })}
+                      placeholder="السعر (ر.س)"
                       className="bg-white rounded-lg px-3 py-2 text-sm outline-none border border-[#EEF2F3]"
                     />
                     <input
                       type="number"
-                      value={packageForm.originalPrice}
-                      onChange={(e) => setPackageForm({ ...packageForm, originalPrice: e.target.value })}
-                      placeholder="السعر الأصلي"
+                      value={serviceForm.durationMinutes}
+                      onChange={(e) => setServiceForm({ ...serviceForm, durationMinutes: e.target.value })}
+                      placeholder="المدة (دقيقة)"
                       className="bg-white rounded-lg px-3 py-2 text-sm outline-none border border-[#EEF2F3]"
                     />
-                    <input
-                      type="text"
-                      value={packageForm.badge}
-                      onChange={(e) => setPackageForm({ ...packageForm, badge: e.target.value })}
-                      placeholder="بادچ (اختياري)"
-                      className="bg-white rounded-lg px-3 py-2 text-sm outline-none border border-[#EEF2F3]"
-                    />
-                    <div className="col-span-3 flex items-center gap-3 mt-1">
+                    <div className="col-span-4 flex items-center gap-3 mt-1">
                       <button
-                        onClick={submitAddPackage}
-                        disabled={submittingPackage}
+                        onClick={submitAddService}
+                        disabled={submittingService}
                         className="text-white bg-primary px-4 py-2 rounded-lg text-xs font-bold disabled:opacity-50"
                       >
-                        {submittingPackage ? "جاري الحفظ..." : "حفظ الباقة"}
+                        {submittingService ? "جاري الحفظ..." : "حفظ الخدمة"}
                       </button>
-                      <button onClick={cancelAddPackage} className="text-text-secondary text-xs font-bold hover:underline">
+                      <button onClick={cancelAddService} className="text-text-secondary text-xs font-bold hover:underline">
                         إلغاء
                       </button>
                     </div>
                   </div>
                 ) : (
                   <button
-                    onClick={() => startAddPackage(carType.id)}
+                    onClick={() => startAddService(carType.id)}
                     className="self-start text-primary text-xs font-bold hover:underline"
                   >
-                    + إضافة باقة لنوع السيارة ده
+                    + إضافة خدمة لنوع السيارة ده
                   </button>
                 )}
               </div>
@@ -479,24 +448,24 @@ export default function CarTypesPage() {
         })
       )}
 
-      {/* باقات مش مربوطة بنوع سيارة */}
-      {unassignedPackages.length > 0 && (
+      {/* خدمات مش مربوطة بنوع سيارة */}
+      {unassignedServices.length > 0 && (
         <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(16,24,40,0.05)] p-5 flex flex-col gap-3 border-2 border-amber-200">
           <div className="flex flex-col gap-1">
-            <span className="text-text-main text-sm font-bold">⚠️ باقات لسه مش مربوطة بنوع سيارة</span>
-            <span className="text-text-secondary text-xs">اختار نوع السيارة المناسب لكل باقة من القايمة جنبها</span>
+            <span className="text-text-main text-sm font-bold">⚠️ خدمات لسه مش مربوطة بنوع سيارة</span>
+            <span className="text-text-secondary text-xs">اختار نوع السيارة المناسب لكل خدمة من القايمة جنبها</span>
           </div>
-          {unassignedPackages.map((pkg) => (
-            <div key={pkg.id} className="flex items-center justify-between border border-[#EEF2F3] rounded-xl px-4 py-3">
+          {unassignedServices.map((service) => (
+            <div key={service.id} className="flex items-center justify-between border border-[#EEF2F3] rounded-xl px-4 py-3">
               <div className="flex flex-col gap-0.5">
-                <span className="text-text-main text-sm font-bold">{pkg.name}</span>
+                <span className="text-text-main text-sm font-bold">{service.name}</span>
                 <span className="text-text-secondary text-xs">
-                  {pkg.washCount} × {pkg.serviceLabel} — {pkg.price} ر.س
+                  {service.description} — {service.price} ر.س
                 </span>
               </div>
               <select
                 defaultValue=""
-                onChange={(e) => e.target.value && handleAssignCarType(pkg.id, e.target.value)}
+                onChange={(e) => e.target.value && handleAssignCarType(service.id, e.target.value)}
                 className="bg-[#F4F7F8] rounded-lg px-3 py-2 text-sm outline-none border border-[#EEF2F3]"
               >
                 <option value="">اختر نوع السيارة...</option>

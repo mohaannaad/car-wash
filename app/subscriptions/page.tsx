@@ -17,44 +17,35 @@ type Package = {
 
 export default function SubscriptionsPage() {
   const router = useRouter();
-  const { subscription, setPackage } = useSubscription();
+  const { setPackage } = useSubscription();
 
   const [packages, setPackages] = useState<Package[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!subscription.carType) {
-      router.replace("/subscriptions/car-type");
-      return;
-    }
-
-    fetch(`/api/packages?carTypeId=${subscription.carType.id}`)
+    fetch("/api/packages")
       .then((res) => res.json())
       .then((data) => setPackages(data))
       .finally(() => setLoading(false));
-  }, [subscription.carType, router]);
+  }, []);
 
   const handleSelect = (pkg: Package) => {
     setPackage({ id: pkg.id, name: pkg.name, washCount: pkg.washCount, serviceLabel: pkg.serviceLabel, price: pkg.price });
     router.push("/subscriptions/schedule");
   };
 
-  if (!subscription.carType) return null;
-
   return (
     <main className="h-dvh flex flex-col bg-bg-page overflow-hidden">
       <div className="px-6 pt-8 pb-5 flex flex-col gap-1 shrink-0">
         <h1 className="text-text-main text-2xl font-extrabold">الباقات الشهرية</h1>
-        <p className="text-text-secondary text-sm">
-          باقات {subscription.carType.name} - اشترك واستمتع بغسيل دوري لسيارتك بأفضل سعر
-        </p>
+        <p className="text-text-secondary text-sm">اشترك واستمتع بغسيل دوري لسيارتك بأفضل سعر</p>
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-4 px-5 pb-8">
         {loading ? (
           <p className="text-center text-text-secondary text-sm py-8">جاري التحميل...</p>
         ) : packages.length === 0 ? (
-          <p className="text-center text-text-secondary text-sm py-8">لا توجد باقات متاحة لنوع السيارة ده حاليًا</p>
+          <p className="text-center text-text-secondary text-sm py-8">لا توجد باقات متاحة حاليًا</p>
         ) : (
           packages.map((pkg) => (
             <button
