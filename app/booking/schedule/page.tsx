@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useBooking } from "../../context/BookingContext";
 
@@ -10,12 +10,9 @@ const monthNames = [
   "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر",
 ];
 
-const WORK_START_HOUR = 9;
-const WORK_END_HOUR = 18;
-
-function buildTimeSlots() {
+function buildTimeSlots(startHour: number, endHour: number) {
   const slots: { label: string; hour: number }[] = [];
-  for (let hour = WORK_START_HOUR; hour <= WORK_END_HOUR; hour++) {
+  for (let hour = startHour; hour <= endHour; hour++) {
     const period = hour < 12 ? "ص" : "م";
     const displayHour = hour > 12 ? hour - 12 : hour;
     slots.push({ label: `${String(displayHour).padStart(2, "0")}:00 ${period}`, hour });
@@ -43,8 +40,25 @@ export default function ScheduleStep() {
   const router = useRouter();
   const { setDate, setTime } = useBooking();
 
+  const [workHours, setWorkHours] = useState<{ start: number; end: number } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) =>
+        setWorkHours({
+          start: data.workStartHour ?? 9,
+          end: data.workEndHour ?? 18,
+        })
+      )
+      .catch(() => setWorkHours({ start: 9, end: 18 }));
+  }, []);
+
   const days = useMemo(() => buildNext14Days(), []);
-  const timeSlots = useMemo(() => buildTimeSlots(), []);
+  const timeSlots = useMemo(
+    () => (workHours ? buildTimeSlots(workHours.start, workHours.end) : []),
+    [workHours]
+  );
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
 
@@ -53,7 +67,6 @@ export default function ScheduleStep() {
 
   const isSlotDisabled = (dayKey: string, hour: number) => {
     if (!isToday(dayKey)) return false;
-    // لازم نسيب ساعة فاصلة على الأقل من دلوقتي عشان الفريق يقدر يتحرك
     return hour <= now.getHours();
   };
 
@@ -63,7 +76,6 @@ export default function ScheduleStep() {
 
   const handleSelectDay = (dayKey: string) => {
     setSelectedDay(dayKey);
-    // لو الوقت المختار قبل كده بقى غير متاح في اليوم الجديد، نلغيه
     if (selectedTime) {
       const stillValid = timeSlots.some(
         (slot) => slot.label === selectedTime && !isSlotDisabled(dayKey, slot.hour)
@@ -78,6 +90,14 @@ export default function ScheduleStep() {
     setTime(selectedTime);
     router.push("/booking/customer");
   };
+
+  if (!workHours) {
+    return (
+      <main className="h-dvh flex items-center justify-center bg-bg-page">
+        <p className="text-text-secondary text-sm">جارٍ التحميل...</p>
+      </main>
+    );
+  }
 
   return (
     <main className="h-dvh flex flex-col bg-bg-page overflow-hidden">
