@@ -81,18 +81,7 @@ const navItems = [
       </svg>
     ),
   },
-  {
-    href: "/admin/services",
-    label: "الباقات",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 13l2-5a3 3 0 0 1 2.8-2h8.4A3 3 0 0 1 19 8l2 5" />
-        <path d="M3 13h18v4a1 1 0 0 1-1 1h-1.2a1 1 0 0 1-1-.8L17.5 16h-11l-.3 1.2a1 1 0 0 1-1 .8H4a1 1 0 0 1-1-1z" />
-        <circle cx="7.5" cy="16.5" r="1.4" />
-        <circle cx="16.5" cy="16.5" r="1.4" />
-      </svg>
-    ),
-  },
+
   {
     href: "/admin/extras",
     label: "الخدمات الإضافية",
