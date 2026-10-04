@@ -8,7 +8,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { name, washCount, serviceLabel, price, originalPrice, badge, features, isActive } = body;
+    const { name, washCount, serviceLabel, price, originalPrice, badge, features, isActive, carTypeId } = body;
 
     const pkg = await prisma.package.update({
       where: { id },
@@ -21,6 +21,7 @@ export async function PATCH(
         ...(badge !== undefined && { badge }),
         ...(features !== undefined && { features }),
         ...(isActive !== undefined && { isActive }),
+        ...(carTypeId !== undefined && { carTypeId }),
       },
     });
 

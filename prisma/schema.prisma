@@ -10,12 +10,13 @@ datasource db {
 // ===== إدارة المحتوى =====
 
 model CarType {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   name      String
   imageUrl  String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
   orders    Order[]
+  packages  Package[]
 }
 
 model Service {
@@ -49,6 +50,8 @@ model Package {
   badge         String?
   features      String[]
   isActive      Boolean        @default(true)
+  carType       CarType?       @relation(fields: [carTypeId], references: [id], onDelete: SetNull)
+  carTypeId     String?
   createdAt     DateTime       @default(now())
   subscriptions Subscription[]
 }

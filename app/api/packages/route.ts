@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const carTypeId = searchParams.get("carTypeId");
+
     const packages = await prisma.package.findMany({
-      where: { isActive: true },
+      where: {
+        isActive: true,
+        ...(carTypeId && { carTypeId }),
+      },
       orderBy: { createdAt: "asc" },
     });
     return NextResponse.json(packages);
