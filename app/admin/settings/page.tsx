@@ -68,14 +68,16 @@ export default function SettingsPage() {
     );
   }
 
-  return (
-    <div className="p-6 max-w-3xl" dir="rtl">
+    return (
+    <div className="p-6" dir="rtl">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-[#101828]">الإعدادات</h1>
         <p className="text-sm text-[#667085] mt-1">البيانات العامة وساعات العمل الخاصة بالموقع</p>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm p-6 mb-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+
+      <div className="bg-white rounded-2xl shadow-sm p-6">
         <h2 className="text-text-main text-base font-extrabold mb-1">ساعات العمل</h2>
         <p className="text-text-secondary text-xs mb-4">
           المواعيد المتاحة للحجز في الموقع (العادي والباقات الشهرية) هتتولد تلقائيًا بفاصل ساعة بين كل الفترة دي
@@ -136,7 +138,7 @@ export default function SettingsPage() {
               className="bg-[#F4F7F8] rounded-xl px-4 py-2.5 text-sm outline-none text-right"
             />
           </div>
-          <div className="flex flex-col gap-1.5">
+                   <div className="flex flex-col gap-1.5">
             <label className="text-text-main text-xs font-bold">البريد الإلكتروني للدعم</label>
             <input
               type="email"
@@ -147,6 +149,8 @@ export default function SettingsPage() {
             />
           </div>
         </div>
+      </div>
+
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm p-6 mb-5">
