@@ -92,6 +92,11 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum PaymentMethod {
+  CASH
+  TRANSFER
+  CARD
+}
 model Order {
   id            String       @id @default(cuid())
    customer      Customer?    @relation(fields: [customerId], references: [id], onDelete: SetNull)
@@ -117,6 +122,9 @@ district      District?    @relation(fields: [districtId], references: [id], onD
   viewed        Boolean      @default(false)
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
+    customerCalledAt DateTime?
+  paymentMethod    PaymentMethod?
+  completedAt      DateTime?
 }
 
 model OrderExtra {
@@ -165,6 +173,8 @@ model SubscriptionWash {
   scheduledDate  DateTime
   scheduledTime  String       @default("")
   status         OrderStatus  @default(PENDING)
+    customerCalledAt DateTime?
+  completedAt      DateTime?
 }
 
 
