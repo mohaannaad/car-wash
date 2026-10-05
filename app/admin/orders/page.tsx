@@ -229,6 +229,32 @@ export default function OrdersPage() {
     await fetch(`/api/admin/orders/${id}`, { method: "DELETE" });
   };
 
+  const handlePaymentChange = async (order: Order, newMethod: string) => {
+    if (newMethod === order.paymentMethod) return;
+
+    const oldLabel = order.paymentMethod ? paymentLabels[order.paymentMethod] : "غير محددة";
+    const newLabel = paymentLabels[newMethod];
+    const serial = order.id.slice(-6).toUpperCase();
+
+    if (!confirm(`هل أنت متأكد من تغيير طريقة الدفع للطلب #${serial} من "${oldLabel}" إلى "${newLabel}"؟`)) {
+      return;
+    }
+
+    const previous = order.paymentMethod ?? null;
+    setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, paymentMethod: newMethod } : o)));
+
+    const res = await fetch(`/api/admin/orders/${order.id}/payment`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ paymentMethod: newMethod }),
+    });
+
+    if (!res.ok) {
+      setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, paymentMethod: previous } : o)));
+      alert("تعذر تغيير طريقة الدفع، حاول مرة أخرى");
+    }
+  };
+
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const filteredOrders = orders.filter((order) => {
     if (!normalizedQuery) return true;
@@ -334,10 +360,19 @@ export default function OrdersPage() {
                   </td>
                   <td className="px-6 py-4 text-text-main text-sm font-bold whitespace-nowrap">{order.totalPrice} ر.س</td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {order.paymentMethod ? (
-                      <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-50 text-emerald-600">
-                        {paymentLabels[order.paymentMethod] || order.paymentMethod}
-                      </span>
+                    {order.status === "COMPLETED" ? (
+                      <select
+                        value={order.paymentMethod || ""}
+                        onChange={(e) => handlePaymentChange(order, e.target.value)}
+                        className="text-xs font-bold px-3 py-1.5 rounded-full outline-none cursor-pointer bg-emerald-50 text-emerald-600"
+                      >
+                        {!order.paymentMethod && (
+                          <option value="" disabled>غير محددة</option>
+                        )}
+                        {Object.entries(paymentLabels).map(([value, label]) => (
+                          <option key={value} value={value}>{label}</option>
+                        ))}
+                      </select>
                     ) : (
                       <span className="text-text-secondary text-xs">—</span>
                     )}
