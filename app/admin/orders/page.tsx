@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { SPOTS } from "../../../lib/photoSpots";
 
 type Order = {
   id: string;
@@ -17,9 +18,17 @@ type Order = {
   employeeId: string | null;
   district: { name: string; city: { name: string } } | null;
   createdAt: string;
+  paymentMethod?: string | null;
 };
 
 type Employee = { id: string; name: string; isActive: boolean };
+
+type Photo = { id: string; stage: string; spot: string; url: string; createdAt: string };
+type PhotoInfo = {
+  customerCalledAt: string | null;
+  completedAt: string | null;
+  paymentMethod?: string | null;
+} | null;
 
 const statusLabels: Record<string, string> = {
   PENDING: "قيد الانتظار",
@@ -39,6 +48,12 @@ const statusStyles: Record<string, string> = {
   CANCELLED: "bg-red-50 text-red-500",
 };
 
+const paymentLabels: Record<string, string> = {
+  CASH: "كاش",
+  TRANSFER: "تحويل",
+  CARD: "فيزا",
+};
+
 function formatSentAt(dateStr: string) {
   const d = new Date(dateStr);
   return d.toLocaleString("ar-EG", {
@@ -50,11 +65,112 @@ function formatSentAt(dateStr: string) {
   });
 }
 
+function PhotosModal({ order, onClose }: { order: Order; onClose: () => void }) {
+  const [photos, setPhotos] = useState<Photo[]>([]);
+  const [info, setInfo] = useState<PhotoInfo>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`/api/admin/photos?kind=order&id=${order.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          setPhotos(data.photos || []);
+          setInfo(data.info || null);
+        }
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [order.id]);
+
+  const payment = info?.paymentMethod || order.paymentMethod;
+
+  const renderStage = (stage: "BEFORE" | "AFTER", title: string) => {
+    const list = photos.filter((p) => p.stage === stage);
+    return (
+      <div className="flex flex-col gap-3">
+        <h3 className="text-text-main text-sm font-bold">
+          {title} <span className="text-text-secondary font-normal">({list.length}/{SPOTS.length})</span>
+        </h3>
+        {list.length === 0 ? (
+          <div className="text-text-secondary text-xs bg-[#F4F7F8] rounded-xl p-4 text-center">لا توجد صور</div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {SPOTS.map((s) => {
+              const p = list.find((x) => x.spot === s.key);
+              if (!p) return null;
+              return (
+                <a key={p.id} href={p.url} target="_blank" rel="noopener noreferrer" className="flex flex-col gap-1">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={p.url} alt={s.label} className="w-full aspect-[4/3] object-cover rounded-xl bg-[#F4F7F8]" />
+                  <span className="text-text-main text-xs font-bold">{s.label}</span>
+                  <span className="text-text-secondary text-[11px]" dir="ltr" style={{ textAlign: "right" }}>
+                    {formatSentAt(p.createdAt)}
+                  </span>
+                </a>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div
+        className="bg-white rounded-2xl w-full max-w-3xl max-h-[88vh] overflow-y-auto p-6 flex flex-col gap-5"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="text-text-main text-lg font-extrabold">
+            صور الطلب <span dir="ltr">#{order.id.slice(-6).toUpperCase()}</span>
+          </h2>
+          <button onClick={onClose} className="text-text-secondary text-sm font-bold hover:text-red-500">
+            إغلاق
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div className="bg-[#F4F7F8] rounded-xl p-3 flex flex-col gap-1">
+            <span className="text-text-secondary">اتصال الموظف بالعميل</span>
+            <span className="text-text-main font-bold">
+              {info?.customerCalledAt ? formatSentAt(info.customerCalledAt) : "—"}
+            </span>
+          </div>
+          <div className="bg-[#F4F7F8] rounded-xl p-3 flex flex-col gap-1">
+            <span className="text-text-secondary">وقت الإنهاء</span>
+            <span className="text-text-main font-bold">
+              {info?.completedAt ? formatSentAt(info.completedAt) : "—"}
+            </span>
+          </div>
+          <div className="bg-[#F4F7F8] rounded-xl p-3 flex flex-col gap-1">
+            <span className="text-text-secondary">طريقة الدفع</span>
+            <span className="text-text-main font-bold">{payment ? paymentLabels[payment] || payment : "—"}</span>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="p-6 text-center text-text-secondary text-sm">جارٍ التحميل...</div>
+        ) : (
+          <>
+            {renderStage("BEFORE", "قبل التنفيذ")}
+            {renderStage("AFTER", "بعد التنفيذ")}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [photosOrder, setPhotosOrder] = useState<Order | null>(null);
 
   const loadOrders = async () => {
     try {
@@ -121,6 +237,8 @@ export default function OrdersPage() {
     return serial.includes(normalizedQuery) || phone.includes(normalizedQuery);
   });
 
+  const hasPhotoStage = (s: string) => s === "ON_THE_WAY" || s === "IN_PROGRESS" || s === "COMPLETED";
+
   return (
     <div className="p-8 flex flex-col gap-7">
       <div className="flex flex-col gap-1">
@@ -171,8 +289,10 @@ export default function OrdersPage() {
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">العنوان</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الموعد</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">السعر</th>
+                <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الدفع</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الموظف المسؤول</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الحالة</th>
+                <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الصور</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">إجراءات</th>
               </tr>
             </thead>
@@ -213,6 +333,15 @@ export default function OrdersPage() {
                     {new Date(order.scheduledDate).toLocaleDateString("ar-EG", { day: "numeric", month: "short" })} - {order.scheduledTime}
                   </td>
                   <td className="px-6 py-4 text-text-main text-sm font-bold whitespace-nowrap">{order.totalPrice} ر.س</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {order.paymentMethod ? (
+                      <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-50 text-emerald-600">
+                        {paymentLabels[order.paymentMethod] || order.paymentMethod}
+                      </span>
+                    ) : (
+                      <span className="text-text-secondary text-xs">—</span>
+                    )}
+                  </td>
                   <td className="px-6 py-4">
                     <select
                       value={order.employeeId || ""}
@@ -237,6 +366,18 @@ export default function OrdersPage() {
                     </select>
                   </td>
                   <td className="px-6 py-4">
+                    {hasPhotoStage(order.status) ? (
+                      <button
+                        onClick={() => setPhotosOrder(order)}
+                        className="text-primary text-xs font-bold px-3 py-1.5 rounded-full bg-primary-light whitespace-nowrap"
+                      >
+                        عرض الصور
+                      </button>
+                    ) : (
+                      <span className="text-text-secondary text-xs">—</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4">
                     <button onClick={() => handleDelete(order.id)} className="text-red-500 text-xs font-bold hover:underline whitespace-nowrap">
                       حذف
                     </button>
@@ -247,6 +388,8 @@ export default function OrdersPage() {
           </table>
         )}
       </div>
+
+      {photosOrder && <PhotosModal order={photosOrder} onClose={() => setPhotosOrder(null)} />}
     </div>
   );
 }
