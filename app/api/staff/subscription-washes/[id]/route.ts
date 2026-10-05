@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { OrderStatus } from "@prisma/client";
 import { prisma } from "../../../../../lib/prisma";
 import { whenOf } from "../../../../../lib/riyadhDate";
+import { hasAllPhotos } from "../../../../../lib/photoGate";
 
 const nextStatus: Record<string, string | null> = {
   PENDING: "CONFIRMED",
@@ -50,6 +51,12 @@ export async function PATCH(
     }
     if (status === "CONFIRMED" && !wash.customerCalledAt) {
       return NextResponse.json({ error: "لازم تتصل بالعميل الأول لتأكيد الموعد" }, { status: 400 });
+    }
+    if (status === "IN_PROGRESS" && !(await hasAllPhotos("wash", id, "BEFORE"))) {
+      return NextResponse.json({ error: "لازم تصوّر السيارة من الأماكن الستة قبل بدء التنفيذ" }, { status: 400 });
+    }
+    if (status === "COMPLETED" && !(await hasAllPhotos("wash", id, "AFTER"))) {
+      return NextResponse.json({ error: "لازم تصوّر السيارة من الأماكن الستة بعد التنفيذ" }, { status: 400 });
     }
 
     const updated = await prisma.subscriptionWash.update({

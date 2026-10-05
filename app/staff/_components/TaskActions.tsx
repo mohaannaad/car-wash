@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import PhotoStage from "./PhotoStage";
 
 type When = "past" | "today" | "upcoming";
 
@@ -81,6 +82,8 @@ export default function TaskActions({
 }: Props) {
   const [busy, setBusy] = useState(false);
   const [payment, setPayment] = useState<string | null>(null);
+  const [beforeDone, setBeforeDone] = useState(false);
+  const [afterDone, setAfterDone] = useState(false);
 
   const endpoint =
     kind === "order" ? `/api/staff/orders/${id}` : `/api/staff/subscription-washes/${id}`;
@@ -154,32 +157,71 @@ export default function TaskActions({
     );
   }
 
-  // آخر خطوة في الطلبات العادية: اختيار طريقة الدفع
-  if (status === "IN_PROGRESS" && kind === "order") {
+  // عند الوصول: لازم صور "قبل" قبل بدء التنفيذ
+  if (status === "ON_THE_WAY") {
     return (
       <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-2">
-          <span className="text-text-main text-xs font-bold">طريقة الدفع</span>
-          <div className="grid grid-cols-3 gap-2">
-            {paymentOptions.map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => setPayment(opt.value)}
-                className={`py-2.5 rounded-xl text-sm font-bold transition-colors ${
-                  payment === opt.value ? "bg-primary text-white" : "bg-[#F4F7F8] text-text-main"
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <PhotoStage kind={kind} id={id} stage="BEFORE" onChange={setBeforeDone} />
+        {!beforeDone && (
+          <span className="text-amber-600 text-xs font-bold text-center">
+            صوّر السيارة من الأماكن الستة لتتمكن من بدء التنفيذ
+          </span>
+        )}
         <button
-          onClick={() => send({ status: "COMPLETED", paymentMethod: payment })}
-          disabled={!payment || busy}
+          onClick={() => send({ status: "IN_PROGRESS" })}
+          disabled={!beforeDone || busy}
           className={`w-full py-2.5 rounded-xl font-bold text-white text-sm ${
-            !payment || busy ? "bg-disabled cursor-not-allowed" : "bg-primary"
+            !beforeDone || busy ? "bg-disabled cursor-not-allowed" : "bg-primary"
+          }`}
+        >
+          {busy ? "جارٍ التحديث..." : actionLabels.IN_PROGRESS}
+        </button>
+      </div>
+    );
+  }
+
+  // قبل الإنهاء: صور "بعد" (+ طريقة الدفع في الطلبات العادية)
+  if (status === "IN_PROGRESS") {
+    const isOrder = kind === "order";
+    const ready = afterDone && (!isOrder || !!payment);
+
+    return (
+      <div className="flex flex-col gap-3">
+        <PhotoStage kind={kind} id={id} stage="AFTER" onChange={setAfterDone} />
+
+        {isOrder && (
+          <div className="flex flex-col gap-2">
+            <span className="text-text-main text-xs font-bold">طريقة الدفع</span>
+            <div className="grid grid-cols-3 gap-2">
+              {paymentOptions.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setPayment(opt.value)}
+                  className={`py-2.5 rounded-xl text-sm font-bold transition-colors ${
+                    payment === opt.value ? "bg-primary text-white" : "bg-[#F4F7F8] text-text-main"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {!afterDone && (
+          <span className="text-amber-600 text-xs font-bold text-center">
+            صوّر السيارة بعد التنفيذ من الأماكن الستة لتتمكن من الإنهاء
+          </span>
+        )}
+
+        <button
+          onClick={() =>
+            send(isOrder ? { status: "COMPLETED", paymentMethod: payment } : { status: "COMPLETED" })
+          }
+          disabled={!ready || busy}
+          className={`w-full py-2.5 rounded-xl font-bold text-white text-sm ${
+            !ready || busy ? "bg-disabled cursor-not-allowed" : "bg-primary"
           }`}
         >
           {busy ? "جارٍ التحديث..." : actionLabels.COMPLETED}

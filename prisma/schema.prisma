@@ -125,6 +125,7 @@ district      District?    @relation(fields: [districtId], references: [id], onD
     customerCalledAt DateTime?
   paymentMethod    PaymentMethod?
   completedAt      DateTime?
+    photos TaskPhoto[]
 }
 
 model OrderExtra {
@@ -175,6 +176,7 @@ model SubscriptionWash {
   status         OrderStatus  @default(PENDING)
     customerCalledAt DateTime?
   completedAt      DateTime?
+    photos TaskPhoto[]
 }
 
 
@@ -209,4 +211,27 @@ model Settings {
   workEndHour      Int      @default(18)
   vatRate          Float    @default(15)
   updatedAt        DateTime @updatedAt
+}
+
+enum PhotoStage {
+  BEFORE
+  AFTER
+}
+
+model TaskPhoto {
+  id         String          @id @default(cuid())
+  stage      PhotoStage
+  spot       String
+  url        String
+  employeeId String?
+  createdAt  DateTime        @default(now())
+
+  orderId    String?
+  order      Order?          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  washId     String?
+  wash       SubscriptionWash? @relation(fields: [washId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([washId])
 }
