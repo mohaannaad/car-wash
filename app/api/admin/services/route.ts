@@ -15,10 +15,23 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, description, price, durationMinutes, carTypeId } = body;
+    const { name, description, price, originalPrice, durationMinutes, carTypeId } = body;
 
     if (!name || !price || !durationMinutes || !carTypeId) {
       return NextResponse.json({ error: "البيانات ناقصة، لازم تحدد نوع السيارة" }, { status: 400 });
+    }
+
+    // السعر قبل الخصم (اختياري)
+    const original =
+      originalPrice === null || originalPrice === undefined || originalPrice === ""
+        ? null
+        : Number(originalPrice);
+
+    if (original !== null && (!Number.isFinite(original) || original <= Number(price))) {
+      return NextResponse.json(
+        { error: "السعر قبل الخصم لازم يكون أكبر من السعر بعد الخصم" },
+        { status: 400 }
+      );
     }
 
     const service = await prisma.service.create({
@@ -26,6 +39,7 @@ export async function POST(request: Request) {
         name: name.trim(),
         description: description?.trim() || "",
         price: Number(price),
+        originalPrice: original,
         durationMinutes: Number(durationMinutes),
         carTypeId,
       },

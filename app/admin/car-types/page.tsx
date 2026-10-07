@@ -15,12 +15,17 @@ type Service = {
   name: string;
   description: string;
   price: number;
+  originalPrice: number | null;
   durationMinutes: number;
   isActive: boolean;
   carTypeId: string | null;
 };
 
-const emptyServiceForm = { name: "", description: "", price: "", durationMinutes: "" };
+const emptyServiceForm = { name: "", description: "", price: "", originalPrice: "", durationMinutes: "" };
+
+function discountPercent(original: number, price: number) {
+  return Math.round(((original - price) / original) * 100);
+}
 
 export default function CarTypesPage() {
   const [carTypes, setCarTypes] = useState<CarType[]>([]);
@@ -130,15 +135,29 @@ export default function CarTypesPage() {
     setServiceForm(emptyServiceForm);
   };
 
+  // التحقق من السعر قبل/بعد الخصم
+  const validatePrices = (form: typeof emptyServiceForm) => {
+    if (form.originalPrice && Number(form.originalPrice) <= Number(form.price)) {
+      setError("السعر قبل الخصم لازم يكون أكبر من السعر بعد الخصم");
+      return false;
+    }
+    return true;
+  };
+
   const submitAddService = async () => {
     if (!addingForCarType || !serviceForm.name.trim() || !serviceForm.price || !serviceForm.durationMinutes) return;
-    setSubmittingService(true);
     setError("");
+    if (!validatePrices(serviceForm)) return;
+    setSubmittingService(true);
     try {
       const res = await fetch("/api/admin/services", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...serviceForm, carTypeId: addingForCarType }),
+        body: JSON.stringify({
+          ...serviceForm,
+          originalPrice: serviceForm.originalPrice ? Number(serviceForm.originalPrice) : null,
+          carTypeId: addingForCarType,
+        }),
       });
       if (!res.ok) throw new Error();
       setAddingForCarType(null);
@@ -170,6 +189,7 @@ export default function CarTypesPage() {
       name: service.name,
       description: service.description,
       price: String(service.price),
+      originalPrice: service.originalPrice ? String(service.originalPrice) : "",
       durationMinutes: String(service.durationMinutes),
     });
   };
@@ -178,13 +198,17 @@ export default function CarTypesPage() {
 
   const saveEditService = async (id: string) => {
     if (!editForm.name.trim() || !editForm.price || !editForm.durationMinutes) return;
-    setSavingEdit(true);
     setError("");
+    if (!validatePrices(editForm)) return;
+    setSavingEdit(true);
     try {
       const res = await fetch(`/api/admin/services/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editForm),
+        body: JSON.stringify({
+          ...editForm,
+          originalPrice: editForm.originalPrice ? Number(editForm.originalPrice) : null,
+        }),
       });
       if (!res.ok) throw new Error();
       setEditingId(null);
@@ -206,9 +230,7 @@ export default function CarTypesPage() {
     }
   };
 
-  
-
-
+  const inputClass = "bg-white rounded-lg px-3 py-2 text-sm outline-none border border-[#EEF2F3]";
 
   return (
     <div className="p-8 flex flex-col gap-7">
@@ -307,36 +329,43 @@ export default function CarTypesPage() {
 
                 {carTypeServices.map((service) =>
                   editingId === service.id ? (
-                    <div key={service.id} className="grid grid-cols-4 gap-2 bg-primary-light/30 rounded-xl p-3 items-center">
+                    <div key={service.id} className="grid grid-cols-5 gap-2 bg-primary-light/30 rounded-xl p-3 items-center">
                       <input
                         type="text"
                         value={editForm.name}
                         onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                        className="bg-white rounded-lg px-3 py-2 text-sm outline-none border border-[#EEF2F3]"
+                        className={inputClass}
                         placeholder="اسم الخدمة"
                       />
                       <input
                         type="text"
                         value={editForm.description}
                         onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                        className="bg-white rounded-lg px-3 py-2 text-sm outline-none border border-[#EEF2F3]"
+                        className={inputClass}
                         placeholder="وصف مختصر"
+                      />
+                      <input
+                        type="number"
+                        value={editForm.originalPrice}
+                        onChange={(e) => setEditForm({ ...editForm, originalPrice: e.target.value })}
+                        className={inputClass}
+                        placeholder="السعر قبل الخصم (اختياري)"
                       />
                       <input
                         type="number"
                         value={editForm.price}
                         onChange={(e) => setEditForm({ ...editForm, price: e.target.value })}
-                        className="bg-white rounded-lg px-3 py-2 text-sm outline-none border border-[#EEF2F3]"
-                        placeholder="السعر"
+                        className={inputClass}
+                        placeholder="السعر بعد الخصم"
                       />
                       <input
                         type="number"
                         value={editForm.durationMinutes}
                         onChange={(e) => setEditForm({ ...editForm, durationMinutes: e.target.value })}
-                        className="bg-white rounded-lg px-3 py-2 text-sm outline-none border border-[#EEF2F3]"
+                        className={inputClass}
                         placeholder="المدة (دقيقة)"
                       />
-                      <div className="col-span-4 flex items-center gap-3 mt-1">
+                      <div className="col-span-5 flex items-center gap-3 mt-1">
                         <button
                           onClick={() => saveEditService(service.id)}
                           disabled={savingEdit}
@@ -363,8 +392,20 @@ export default function CarTypesPage() {
                             {service.isActive ? "مفعّل" : "متوقف"}
                           </button>
                         </div>
-                        <span className="text-text-secondary text-xs">
-                          {service.description} — {service.price} ر.س — {service.durationMinutes} دقيقة
+                        <span className="text-text-secondary text-xs flex items-center gap-1.5 flex-wrap">
+                          <span>{service.description} —</span>
+                          {service.originalPrice && service.originalPrice > service.price ? (
+                            <>
+                              <span className="line-through text-[#98A2B3]">{service.originalPrice}</span>
+                              <span className="text-text-main font-bold">{service.price} ر.س</span>
+                              <span className="bg-red-50 text-red-500 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                خصم {discountPercent(service.originalPrice, service.price)}%
+                              </span>
+                            </>
+                          ) : (
+                            <span>{service.price} ر.س</span>
+                          )}
+                          <span>— {service.durationMinutes} دقيقة</span>
                         </span>
                       </div>
                       <div className="flex items-center gap-3">
@@ -381,36 +422,43 @@ export default function CarTypesPage() {
 
                 {/* نموذج إضافة خدمة جديدة */}
                 {addingForCarType === carType.id ? (
-                  <div className="grid grid-cols-4 gap-2 bg-[#F4F7F8] rounded-xl p-3">
+                  <div className="grid grid-cols-5 gap-2 bg-[#F4F7F8] rounded-xl p-3">
                     <input
                       type="text"
                       value={serviceForm.name}
                       onChange={(e) => setServiceForm({ ...serviceForm, name: e.target.value })}
                       placeholder="اسم الخدمة (مثال: غسيل خارجي)"
-                      className="bg-white rounded-lg px-3 py-2 text-sm outline-none border border-[#EEF2F3]"
+                      className={inputClass}
                     />
                     <input
                       type="text"
                       value={serviceForm.description}
                       onChange={(e) => setServiceForm({ ...serviceForm, description: e.target.value })}
                       placeholder="وصف مختصر للخدمة"
-                      className="bg-white rounded-lg px-3 py-2 text-sm outline-none border border-[#EEF2F3]"
+                      className={inputClass}
+                    />
+                    <input
+                      type="number"
+                      value={serviceForm.originalPrice}
+                      onChange={(e) => setServiceForm({ ...serviceForm, originalPrice: e.target.value })}
+                      placeholder="السعر قبل الخصم (اختياري)"
+                      className={inputClass}
                     />
                     <input
                       type="number"
                       value={serviceForm.price}
                       onChange={(e) => setServiceForm({ ...serviceForm, price: e.target.value })}
-                      placeholder="السعر (ر.س)"
-                      className="bg-white rounded-lg px-3 py-2 text-sm outline-none border border-[#EEF2F3]"
+                      placeholder="السعر بعد الخصم (ر.س)"
+                      className={inputClass}
                     />
                     <input
                       type="number"
                       value={serviceForm.durationMinutes}
                       onChange={(e) => setServiceForm({ ...serviceForm, durationMinutes: e.target.value })}
                       placeholder="المدة (دقيقة)"
-                      className="bg-white rounded-lg px-3 py-2 text-sm outline-none border border-[#EEF2F3]"
+                      className={inputClass}
                     />
-                    <div className="col-span-4 flex items-center gap-3 mt-1">
+                    <div className="col-span-5 flex items-center gap-3 mt-1">
                       <button
                         onClick={submitAddService}
                         disabled={submittingService}
@@ -436,8 +484,6 @@ export default function CarTypesPage() {
           );
         })
       )}
-
-     
     </div>
   );
 }

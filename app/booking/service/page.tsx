@@ -9,8 +9,17 @@ type Service = {
   name: string;
   description: string;
   price: number;
+  originalPrice?: number | null;
   durationMinutes: number;
 };
+
+function hasDiscount(s: Service) {
+  return !!s.originalPrice && s.originalPrice > s.price;
+}
+
+function discountPercent(s: Service) {
+  return Math.round((((s.originalPrice as number) - s.price) / (s.originalPrice as number)) * 100);
+}
 
 export default function ServiceStep() {
   const router = useRouter();
@@ -56,6 +65,7 @@ export default function ServiceStep() {
         ) : (
           services.map((service) => {
             const isSelected = selectedId === service.id;
+            const discounted = hasDiscount(service);
             return (
               <button
                 key={service.id}
@@ -82,14 +92,28 @@ export default function ServiceStep() {
                   </svg>
                 </div>
                 <div className={`flex-1 flex flex-col gap-1.5 ${isSelected ? "pl-6" : ""}`}>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-start justify-between gap-2">
                     <span className={`text-base font-bold ${isSelected ? "text-primary" : "text-text-main"}`}>{service.name}</span>
-                    <span className="text-[15px] font-extrabold text-primary">{service.price} ر.س</span>
+                    <div className="flex flex-col items-end leading-tight shrink-0">
+                      {discounted && (
+                        <span className="text-[12px] font-semibold text-[#98A2B3] line-through">
+                          {service.originalPrice} ر.س
+                        </span>
+                      )}
+                      <span className="text-[15px] font-extrabold text-primary">{service.price} ر.س</span>
+                    </div>
                   </div>
                   <p className="text-text-secondary text-[13px] leading-relaxed">{service.description}</p>
-                  <span className={`text-xs font-medium mt-0.5 ${isSelected ? "text-primary" : "text-[#98A2B3]"}`}>
-                    {service.durationMinutes} دقيقة
-                  </span>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className={`text-xs font-medium ${isSelected ? "text-primary" : "text-[#98A2B3]"}`}>
+                      {service.durationMinutes} دقيقة
+                    </span>
+                    {discounted && (
+                      <span className="text-[11px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full">
+                        وفّر {discountPercent(service)}%
+                      </span>
+                    )}
+                  </div>
                 </div>
               </button>
             );
