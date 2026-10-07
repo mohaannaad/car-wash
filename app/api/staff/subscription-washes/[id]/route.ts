@@ -25,7 +25,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { action, status } = body;
+    const { action, status, reason } = body;
 
     const wash = await prisma.subscriptionWash.findUnique({ where: { id } });
     if (!wash || wash.employeeId !== employeeId) {
@@ -36,6 +36,31 @@ export async function PATCH(
       const updated = await prisma.subscriptionWash.update({
         where: { id },
         data: { customerCalledAt: wash.customerCalledAt ?? new Date() },
+      });
+      return NextResponse.json(updated);
+    }
+
+    if (action === "reject") {
+      if (wash.status !== "PENDING") {
+        return NextResponse.json({ error: "لا يمكن رفض المهمة بعد قبولها" }, { status: 400 });
+      }
+      if (whenOf(wash.scheduledDate) === "upcoming") {
+        return NextResponse.json({ error: "موعد المهمة دي لسه ماجاش" }, { status: 400 });
+      }
+      if (!wash.customerCalledAt) {
+        return NextResponse.json({ error: "لازم تتصل بالعميل الأول" }, { status: 400 });
+      }
+      const text = typeof reason === "string" ? reason.trim() : "";
+      if (text.length < 3) {
+        return NextResponse.json({ error: "اكتب سبب الرفض" }, { status: 400 });
+      }
+      const updated = await prisma.subscriptionWash.update({
+        where: { id },
+        data: {
+          status: "CANCELLED",
+          rejectionReason: text.slice(0, 500),
+          rejectedAt: new Date(),
+        },
       });
       return NextResponse.json(updated);
     }
@@ -59,11 +84,17 @@ export async function PATCH(
       return NextResponse.json({ error: "لازم تصوّر السيارة من الأماكن الستة بعد التنفيذ" }, { status: 400 });
     }
 
+    let points = 0;
+    if (status === "COMPLETED") {
+      const settings = await prisma.settings.findUnique({ where: { id: "singleton" } });
+      points = settings?.pointsPerTask ?? 10;
+    }
+
     const updated = await prisma.subscriptionWash.update({
       where: { id },
       data: {
         status: status as OrderStatus,
-        ...(status === "COMPLETED" && { completedAt: new Date() }),
+        ...(status === "COMPLETED" && { completedAt: new Date(), pointsAwarded: points }),
       },
     });
     return NextResponse.json(updated);

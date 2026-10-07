@@ -25,11 +25,22 @@ export async function GET(req: Request) {
     kind === "order"
       ? await prisma.order.findUnique({
           where: { id },
-          select: { customerCalledAt: true, completedAt: true, paymentMethod: true },
+          select: {
+            customerCalledAt: true,
+            completedAt: true,
+            paymentMethod: true,
+            rejectionReason: true,
+            rejectedAt: true,
+          },
         })
       : await prisma.subscriptionWash.findUnique({
           where: { id },
-          select: { customerCalledAt: true, completedAt: true },
+          select: {
+            customerCalledAt: true,
+            completedAt: true,
+            rejectionReason: true,
+            rejectedAt: true,
+          },
         });
 
   return NextResponse.json({ photos, info });

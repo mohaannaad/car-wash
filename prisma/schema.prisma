@@ -24,6 +24,7 @@ model Service {
   name            String
   description     String
   price           Int
+    originalPrice Int?
   durationMinutes Int
   isActive        Boolean  @default(true)
   carType         CarType? @relation(fields: [carTypeId], references: [id], onDelete: SetNull)
@@ -37,6 +38,7 @@ model Extra {
   name        String
   description String
   price       Int
+    originalPrice Int?
   isActive    Boolean      @default(true)
   createdAt   DateTime     @default(now())
   orderExtras OrderExtra[]
@@ -79,6 +81,7 @@ district           District?          @relation(fields: [districtId], references
   createdAt          DateTime           @default(now())
   orders             Order[]
   subscriptionWashes SubscriptionWash[]
+    shifts             WorkShift[]
 }
 
 // ===== الطلبات =====
@@ -124,7 +127,10 @@ district      District?    @relation(fields: [districtId], references: [id], onD
   updatedAt     DateTime     @updatedAt
     customerCalledAt DateTime?
   paymentMethod    PaymentMethod?
-  completedAt      DateTime?
+  completedAt      DateTime?   
+    rejectionReason String?
+  rejectedAt      DateTime?
+  pointsAwarded   Int       @default(0)
     photos TaskPhoto[]
 }
 
@@ -176,6 +182,9 @@ model SubscriptionWash {
   status         OrderStatus  @default(PENDING)
     customerCalledAt DateTime?
   completedAt      DateTime?
+    rejectionReason String?
+  rejectedAt      DateTime?
+  pointsAwarded   Int       @default(0)
     photos TaskPhoto[]
 }
 
@@ -210,6 +219,8 @@ model Settings {
   workStartHour    Int      @default(9)
   workEndHour      Int      @default(18)
   vatRate          Float    @default(15)
+    pointsPerTask Int      @default(10)
+  pointValue    Float    @default(0)
   updatedAt        DateTime @updatedAt
 }
 
@@ -234,4 +245,16 @@ model TaskPhoto {
 
   @@index([orderId])
   @@index([washId])
+}
+
+model WorkShift {
+  id             String    @id @default(cuid())
+  employee       Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId     String
+  startedAt      DateTime  @default(now())
+  endedAt        DateTime?
+  breakStartedAt DateTime?
+  breakMinutes   Int       @default(0)
+
+  @@index([employeeId])
 }

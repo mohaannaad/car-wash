@@ -19,6 +19,7 @@ type Order = {
   district: { name: string; city: { name: string } } | null;
   createdAt: string;
   paymentMethod?: string | null;
+  rejectionReason?: string | null;
 };
 
 type Employee = { id: string; name: string; isActive: boolean };
@@ -28,6 +29,8 @@ type PhotoInfo = {
   customerCalledAt: string | null;
   completedAt: string | null;
   paymentMethod?: string | null;
+  rejectionReason?: string | null;
+  rejectedAt?: string | null;
 } | null;
 
 const statusLabels: Record<string, string> = {
@@ -51,7 +54,7 @@ const statusStyles: Record<string, string> = {
 const paymentLabels: Record<string, string> = {
   CASH: "كاش",
   TRANSFER: "تحويل",
-  CARD: "فيزا",
+  CARD: "تحويل بنكي",
 };
 
 function formatSentAt(dateStr: string) {
@@ -86,6 +89,7 @@ function PhotosModal({ order, onClose }: { order: Order; onClose: () => void }) 
   }, [order.id]);
 
   const payment = info?.paymentMethod || order.paymentMethod;
+  const rejection = info?.rejectionReason || order.rejectionReason;
 
   const renderStage = (stage: "BEFORE" | "AFTER", title: string) => {
     const list = photos.filter((p) => p.stage === stage);
@@ -126,12 +130,22 @@ function PhotosModal({ order, onClose }: { order: Order; onClose: () => void }) 
       >
         <div className="flex items-center justify-between">
           <h2 className="text-text-main text-lg font-extrabold">
-            صور الطلب <span dir="ltr">#{order.id.slice(-6).toUpperCase()}</span>
+            تفاصيل الطلب <span dir="ltr">#{order.id.slice(-6).toUpperCase()}</span>
           </h2>
           <button onClick={onClose} className="text-text-secondary text-sm font-bold hover:text-red-500">
             إغلاق
           </button>
         </div>
+
+        {rejection && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex flex-col gap-1">
+            <span className="text-red-600 text-sm font-bold">مرفوض من الموظف</span>
+            <span className="text-red-500 text-sm leading-6">السبب: {rejection}</span>
+            {info?.rejectedAt && (
+              <span className="text-red-400 text-xs">{formatSentAt(info.rejectedAt)}</span>
+            )}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
           <div className="bg-[#F4F7F8] rounded-xl p-3 flex flex-col gap-1">
@@ -263,7 +277,11 @@ export default function OrdersPage() {
     return serial.includes(normalizedQuery) || phone.includes(normalizedQuery);
   });
 
-  const hasPhotoStage = (s: string) => s === "ON_THE_WAY" || s === "IN_PROGRESS" || s === "COMPLETED";
+  const hasDetails = (o: Order) =>
+    o.status === "ON_THE_WAY" ||
+    o.status === "IN_PROGRESS" ||
+    o.status === "COMPLETED" ||
+    (o.status === "CANCELLED" && !!o.rejectionReason);
 
   return (
     <div className="p-8 flex flex-col gap-7">
@@ -318,7 +336,7 @@ export default function OrdersPage() {
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الدفع</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الموظف المسؤول</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الحالة</th>
-                <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الصور</th>
+                <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">التفاصيل</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">إجراءات</th>
               </tr>
             </thead>
@@ -399,14 +417,19 @@ export default function OrdersPage() {
                         <option key={value} value={value}>{label}</option>
                       ))}
                     </select>
+                    {order.status === "CANCELLED" && order.rejectionReason && (
+                      <div className="mt-1.5 max-w-[220px] text-[11px] text-red-500 leading-5">
+                        <span className="font-bold">مرفوض من الموظف:</span> {order.rejectionReason}
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-4">
-                    {hasPhotoStage(order.status) ? (
+                    {hasDetails(order) ? (
                       <button
                         onClick={() => setPhotosOrder(order)}
                         className="text-primary text-xs font-bold px-3 py-1.5 rounded-full bg-primary-light whitespace-nowrap"
                       >
-                        عرض الصور
+                        عرض التفاصيل
                       </button>
                     ) : (
                       <span className="text-text-secondary text-xs">—</span>

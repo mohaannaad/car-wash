@@ -26,7 +26,7 @@ const nextStatusMap: Record<string, string | null> = {
 };
 
 const actionLabels: Record<string, string> = {
-  CONFIRMED: "تأكيد استلام الطلب",
+  CONFIRMED: "قبول الطلب",
   ON_THE_WAY: "أنا في الطريق للعميل",
   IN_PROGRESS: "بدء التنفيذ",
   COMPLETED: "تم التنفيذ",
@@ -35,13 +35,13 @@ const actionLabels: Record<string, string> = {
 const paymentOptions = [
   { value: "CASH", label: "كاش" },
   { value: "TRANSFER", label: "تحويل" },
-  { value: "CARD", label: "فيزا" },
+  { value: "CARD", label: "تحويل بنكي" },
 ];
 
 export const paymentLabels: Record<string, string> = {
   CASH: "كاش",
   TRANSFER: "تحويل",
-  CARD: "فيزا",
+  CARD: "تحويل بنكي",
 };
 
 export function canCall(phone: string) {
@@ -84,6 +84,8 @@ export default function TaskActions({
   const [payment, setPayment] = useState<string | null>(null);
   const [beforeDone, setBeforeDone] = useState(false);
   const [afterDone, setAfterDone] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
+  const [reason, setReason] = useState("");
 
   const endpoint =
     kind === "order" ? `/api/staff/orders/${id}` : `/api/staff/subscription-washes/${id}`;
@@ -107,6 +109,12 @@ export default function TaskActions({
       setBusy(false);
       await onChanged();
     }
+  };
+
+  const submitReject = async () => {
+    if (reason.trim().length < 3) return;
+    if (!confirm("هل أنت متأكد من رفض هذا الطلب؟ لن تتمكن من التراجع.")) return;
+    await send({ action: "reject", reason: reason.trim() });
   };
 
   if (status === "COMPLETED" || status === "CANCELLED") return null;
@@ -143,16 +151,63 @@ export default function TaskActions({
       );
     }
 
+    // بعد الاتصال: قبول أو رفض
+    if (rejecting) {
+      return (
+        <div className="flex flex-col gap-2">
+          <span className="text-text-main text-xs font-bold">سبب الرفض (إجباري)</span>
+          <textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            rows={3}
+            maxLength={500}
+            placeholder="اكتب سبب رفض الطلب..."
+            className="w-full rounded-xl border border-[#E4E7EC] p-3 text-sm outline-none focus:border-red-400 resize-none"
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={submitReject}
+              disabled={busy || reason.trim().length < 3}
+              className={`py-2.5 rounded-xl font-bold text-white text-sm ${
+                busy || reason.trim().length < 3 ? "bg-disabled cursor-not-allowed" : "bg-red-500"
+              }`}
+            >
+              {busy ? "جارٍ الإرسال..." : "تأكيد الرفض"}
+            </button>
+            <button
+              onClick={() => {
+                setRejecting(false);
+                setReason("");
+              }}
+              disabled={busy}
+              className="py-2.5 rounded-xl font-bold text-text-main text-sm bg-[#F4F7F8]"
+            >
+              رجوع
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="flex flex-col gap-2">
         <span className="text-emerald-600 text-xs font-bold text-center">تم الاتصال بالعميل ✓</span>
-        <button
-          onClick={() => send({ status: "CONFIRMED" })}
-          disabled={busy}
-          className="w-full py-2.5 rounded-xl font-bold text-white text-sm bg-primary disabled:opacity-50"
-        >
-          {busy ? "جارٍ التحديث..." : actionLabels.CONFIRMED}
-        </button>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => send({ status: "CONFIRMED" })}
+            disabled={busy}
+            className="py-2.5 rounded-xl font-bold text-white text-sm bg-primary disabled:opacity-50"
+          >
+            {busy ? "جارٍ التحديث..." : actionLabels.CONFIRMED}
+          </button>
+          <button
+            onClick={() => setRejecting(true)}
+            disabled={busy}
+            className="py-2.5 rounded-xl font-bold text-red-500 text-sm bg-red-50 disabled:opacity-50"
+          >
+            رفض الطلب
+          </button>
+        </div>
       </div>
     );
   }
