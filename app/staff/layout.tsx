@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import ShiftBar from "./_components/ShiftBar";
 
 interface StaffInfo {
   name: string;
@@ -17,6 +18,9 @@ interface StaffStats {
   todayDone: number;
   todayRemaining: number;
   allTotal: number;
+  points: number;
+  todayPoints: number;
+  pointValue: number;
 }
 
 export default function StaffLayout({ children }: { children: React.ReactNode }) {
@@ -70,6 +74,9 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
     { label: "المتبقي", value: stats?.todayRemaining, color: "text-amber-600" },
     { label: "الإجمالي", value: stats?.allTotal, color: "text-primary" },
   ];
+
+  const pointsMoney =
+    stats && stats.pointValue > 0 ? Math.round(stats.points * stats.pointValue * 100) / 100 : null;
 
   return (
     <div className="min-h-dvh bg-[#F4F7F8] flex flex-col">
@@ -136,6 +143,28 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
             <span className="text-text-secondary text-[10px] font-bold text-center">{card.label}</span>
           </div>
         ))}
+      </div>
+
+      {/* النقاط */}
+      <div className="px-5 pt-2">
+        <div className="bg-white rounded-xl px-4 py-3 flex items-center justify-between shadow-[0_2px_10px_rgba(16,24,40,0.05)]">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">⭐</span>
+            <div className="flex flex-col leading-tight">
+              <span className="text-text-main text-sm font-bold">نقاطي</span>
+              <span className="text-text-secondary text-[11px]">
+                اليوم: +{stats?.todayPoints ?? 0}
+                {pointsMoney !== null && ` • ≈ ${pointsMoney} ر.س`}
+              </span>
+            </div>
+          </div>
+          <span className="text-primary text-2xl font-extrabold">{stats?.points ?? "-"}</span>
+        </div>
+      </div>
+
+      {/* الدوام */}
+      <div className="px-5 pt-2">
+        <ShiftBar />
       </div>
 
       <main className="flex-1">{children}</main>
