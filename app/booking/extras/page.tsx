@@ -9,7 +9,16 @@ type Extra = {
   name: string;
   description: string;
   price: number;
+  originalPrice?: number | null;
 };
+
+function hasDiscount(e: Extra) {
+  return !!e.originalPrice && e.originalPrice > e.price;
+}
+
+function discountPercent(e: Extra) {
+  return Math.round((((e.originalPrice as number) - e.price) / (e.originalPrice as number)) * 100);
+}
 
 export default function ExtrasStep() {
   const router = useRouter();
@@ -47,6 +56,7 @@ export default function ExtrasStep() {
         ) : (
           extras.map((item) => {
             const selected = isSelected(item.id);
+            const discounted = hasDiscount(item);
             return (
               <button
                 key={item.id}
@@ -66,10 +76,22 @@ export default function ExtrasStep() {
                 <div className="flex-1 flex flex-col gap-1">
                   <span className={`text-[15px] font-bold ${selected ? "text-primary" : "text-text-main"}`}>{item.name}</span>
                   {item.description && <p className="text-text-secondary text-xs leading-relaxed">{item.description}</p>}
+                  {discounted && (
+                    <span className="self-start text-[11px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full">
+                      وفّر {discountPercent(item)}%
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex flex-col items-center gap-2 shrink-0">
-                  <span className={`text-sm font-extrabold ${selected ? "text-primary" : "text-text-main"}`}>{item.price} ر.س</span>
+                  <div className="flex flex-col items-center leading-tight">
+                    {discounted && (
+                      <span className="text-[11px] font-semibold text-[#98A2B3] line-through">
+                        {item.originalPrice} ر.س
+                      </span>
+                    )}
+                    <span className={`text-sm font-extrabold ${selected ? "text-primary" : "text-text-main"}`}>{item.price} ر.س</span>
+                  </div>
                   <span className={`w-5 h-5 rounded-md flex items-center justify-center border-[1.5px] ${selected ? "bg-primary border-primary" : "border-disabled"}`}>
                     {selected && (
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">

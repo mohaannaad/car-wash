@@ -7,8 +7,15 @@ type Extra = {
   name: string;
   description: string;
   price: number;
+  originalPrice: number | null;
   isActive: boolean;
 };
+
+const emptyForm = { name: "", description: "", price: "", originalPrice: "" };
+
+function discountPercent(original: number, price: number) {
+  return Math.round(((original - price) / original) * 100);
+}
 
 export default function ExtrasAdminPage() {
   const [extras, setExtras] = useState<Extra[]>([]);
@@ -16,10 +23,10 @@ export default function ExtrasAdminPage() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const [form, setForm] = useState({ name: "", description: "", price: "" });
+  const [form, setForm] = useState(emptyForm);
 
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ name: "", description: "", price: "" });
+  const [editForm, setEditForm] = useState(emptyForm);
   const [savingEdit, setSavingEdit] = useState(false);
 
   const loadExtras = async () => {
@@ -38,18 +45,30 @@ export default function ExtrasAdminPage() {
     loadExtras();
   }, []);
 
+  const validatePrices = (f: typeof emptyForm) => {
+    if (f.originalPrice && Number(f.originalPrice) <= Number(f.price)) {
+      setError("السعر قبل الخصم لازم يكون أكبر من السعر بعد الخصم");
+      return false;
+    }
+    return true;
+  };
+
   const handleAdd = async () => {
     if (!form.name.trim() || !form.price) return;
-    setSubmitting(true);
     setError("");
+    if (!validatePrices(form)) return;
+    setSubmitting(true);
     try {
       const res = await fetch("/api/admin/extras", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          originalPrice: form.originalPrice ? Number(form.originalPrice) : null,
+        }),
       });
       if (!res.ok) throw new Error();
-      setForm({ name: "", description: "", price: "" });
+      setForm(emptyForm);
       await loadExtras();
     } catch {
       setError("حدث خطأ أثناء الإضافة");
@@ -73,7 +92,12 @@ export default function ExtrasAdminPage() {
 
   const startEdit = (extra: Extra) => {
     setEditingId(extra.id);
-    setEditForm({ name: extra.name, description: extra.description, price: String(extra.price) });
+    setEditForm({
+      name: extra.name,
+      description: extra.description,
+      price: String(extra.price),
+      originalPrice: extra.originalPrice ? String(extra.originalPrice) : "",
+    });
   };
 
   const cancelEdit = () => {
@@ -82,13 +106,17 @@ export default function ExtrasAdminPage() {
 
   const saveEdit = async (id: string) => {
     if (!editForm.name.trim() || !editForm.price) return;
-    setSavingEdit(true);
     setError("");
+    if (!validatePrices(editForm)) return;
+    setSavingEdit(true);
     try {
       const res = await fetch(`/api/admin/extras/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editForm),
+        body: JSON.stringify({
+          ...editForm,
+          originalPrice: editForm.originalPrice ? Number(editForm.originalPrice) : null,
+        }),
       });
       if (!res.ok) throw new Error();
       setEditingId(null);
@@ -110,6 +138,8 @@ export default function ExtrasAdminPage() {
     }
   };
 
+  const inputClass = "bg-[#F4F7F8] rounded-xl px-4 py-3 text-sm outline-none placeholder:text-[#98A2B3]";
+
   return (
     <div className="p-8 flex flex-col gap-7">
       <div className="flex flex-col gap-1">
@@ -118,27 +148,34 @@ export default function ExtrasAdminPage() {
       </div>
 
       <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_rgba(16,24,40,0.05)] flex flex-col gap-3">
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-4 gap-3">
           <input
             type="text"
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             placeholder="اسم الخدمة (مثال: تعطير السيارة)"
-            className="bg-[#F4F7F8] rounded-xl px-4 py-3 text-sm outline-none placeholder:text-[#98A2B3]"
+            className={inputClass}
           />
           <input
             type="text"
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             placeholder="وصف مختصر"
-            className="bg-[#F4F7F8] rounded-xl px-4 py-3 text-sm outline-none placeholder:text-[#98A2B3]"
+            className={inputClass}
+          />
+          <input
+            type="number"
+            value={form.originalPrice}
+            onChange={(e) => setForm({ ...form, originalPrice: e.target.value })}
+            placeholder="السعر قبل الخصم (اختياري)"
+            className={inputClass}
           />
           <input
             type="number"
             value={form.price}
             onChange={(e) => setForm({ ...form, price: e.target.value })}
-            placeholder="السعر (ر.س)"
-            className="bg-[#F4F7F8] rounded-xl px-4 py-3 text-sm outline-none placeholder:text-[#98A2B3]"
+            placeholder="السعر بعد الخصم (ر.س)"
+            className={inputClass}
           />
         </div>
         <button
@@ -191,12 +228,22 @@ export default function ExtrasAdminPage() {
                       />
                     </td>
                     <td className="px-6 py-3">
-                      <input
-                        type="number"
-                        value={editForm.price}
-                        onChange={(e) => setEditForm({ ...editForm, price: e.target.value })}
-                        className="bg-white rounded-lg px-3 py-2 text-sm outline-none border border-[#EEF2F3] w-20"
-                      />
+                      <div className="flex flex-col gap-1.5">
+                        <input
+                          type="number"
+                          value={editForm.originalPrice}
+                          onChange={(e) => setEditForm({ ...editForm, originalPrice: e.target.value })}
+                          placeholder="قبل الخصم"
+                          className="bg-white rounded-lg px-3 py-2 text-sm outline-none border border-[#EEF2F3] w-28"
+                        />
+                        <input
+                          type="number"
+                          value={editForm.price}
+                          onChange={(e) => setEditForm({ ...editForm, price: e.target.value })}
+                          placeholder="بعد الخصم"
+                          className="bg-white rounded-lg px-3 py-2 text-sm outline-none border border-[#EEF2F3] w-28"
+                        />
+                      </div>
                     </td>
                     <td className="px-6 py-3 text-text-secondary text-xs">—</td>
                     <td className="px-6 py-3 flex items-center gap-3">
@@ -216,7 +263,19 @@ export default function ExtrasAdminPage() {
                   <tr key={extra.id} className="border-t border-[#EEF2F3]">
                     <td className="px-6 py-4 text-text-main text-sm font-bold">{extra.name}</td>
                     <td className="px-6 py-4 text-text-secondary text-xs">{extra.description}</td>
-                    <td className="px-6 py-4 text-text-main text-sm font-bold">{extra.price} ر.س</td>
+                    <td className="px-6 py-4">
+                      {extra.originalPrice && extra.originalPrice > extra.price ? (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[#98A2B3] text-xs line-through">{extra.originalPrice}</span>
+                          <span className="text-text-main text-sm font-bold">{extra.price} ر.س</span>
+                          <span className="bg-red-50 text-red-500 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                            خصم {discountPercent(extra.originalPrice, extra.price)}%
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-text-main text-sm font-bold">{extra.price} ر.س</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4">
                       <button
                         onClick={() => handleToggleActive(extra.id, extra.isActive)}

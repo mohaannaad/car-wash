@@ -15,10 +15,23 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, description, price } = body;
+    const { name, description, price, originalPrice } = body;
 
     if (!name || !price) {
       return NextResponse.json({ error: "البيانات ناقصة" }, { status: 400 });
+    }
+
+    // السعر قبل الخصم (اختياري)
+    const original =
+      originalPrice === null || originalPrice === undefined || originalPrice === ""
+        ? null
+        : Number(originalPrice);
+
+    if (original !== null && (!Number.isFinite(original) || original <= Number(price))) {
+      return NextResponse.json(
+        { error: "السعر قبل الخصم لازم يكون أكبر من السعر بعد الخصم" },
+        { status: 400 }
+      );
     }
 
     const extra = await prisma.extra.create({
@@ -26,6 +39,7 @@ export async function POST(request: Request) {
         name: name.trim(),
         description: description?.trim() || "",
         price: Number(price),
+        originalPrice: original,
       },
     });
 
