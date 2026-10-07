@@ -1,7 +1,7 @@
 // app/api/admin/sms-test/route.ts  (مؤقت — هنمسحه بعد التجربة)
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { getSmsInfo, sendSms } from "../../../../lib/sms";
+import { getSmsInfo, sendSms, type MsgClass } from "../../../../lib/sms";
 
 export async function GET(req: Request) {
   const store = await cookies();
@@ -12,6 +12,9 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const to = url.searchParams.get("to");
   const src = url.searchParams.get("src") || undefined;
+  const cls = url.searchParams.get("cls");
+  const msgClass: MsgClass | undefined =
+    cls === "transactional" || cls === "promotional" ? cls : undefined;
 
   // بدون ?to=  → يعرض أسماء المرسل المتاحة والرصيد
   if (!to) {
@@ -20,8 +23,9 @@ export async function GET(req: Request) {
 
   const result = await sendSms(
     to,
-    "تجربة من غسلة ولمعة: تم تأكيد حجزك بنجاح ✅",
-    src
+    "تجربة من غسلة ولمعة: تم تأكيد حجزك بنجاح",
+    src,
+    msgClass
   );
-  return NextResponse.json(result);
+  return NextResponse.json({ sent_with: { src, msgClass: msgClass ?? null }, ...result });
 }

@@ -23,11 +23,14 @@ export type SmsResult = {
   error?: string;
 };
 
+export type MsgClass = "transactional" | "promotional";
+
 // لا يرمي أخطاء أبداً — حتى لو فشل الإرسال ما يتأثرش الحجز
 export async function sendSms(
   phone: string,
   text: string,
-  sender?: string
+  sender?: string,
+  msgClass?: MsgClass
 ): Promise<SmsResult> {
   const token = process.env.SMS_API_KEY;
   const src = sender || process.env.SMS_SENDER_ID;
@@ -38,6 +41,13 @@ export async function sendSms(
   const dest = normalizeSaPhone(phone);
   if (!dest) return { ok: false, status: 0, data: null, error: "رقم الجوال غير صحيح" };
 
+  const payload: Record<string, unknown> = {
+    src,
+    dests: [dest],
+    body: text,
+  };
+  if (msgClass) payload.msgClass = msgClass;
+
   try {
     const res = await fetch(`${API_URL}/msgs/sms`, {
       method: "POST",
@@ -45,12 +55,7 @@ export async function sendSms(
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        src,
-        dests: [dest],
-        body: text,
-        msgClass: "transactional",
-      }),
+      body: JSON.stringify(payload),
     });
     const raw = await res.text();
     let data: unknown = raw;
