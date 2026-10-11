@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "WorkShift" ADD COLUMN     "lastAccuracy" DOUBLE PRECISION,
+ADD COLUMN     "lastLat" DOUBLE PRECISION,
+ADD COLUMN     "lastLng" DOUBLE PRECISION,
+ADD COLUMN     "lastLocationAt" TIMESTAMP(3);

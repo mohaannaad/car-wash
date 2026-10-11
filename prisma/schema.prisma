@@ -256,5 +256,11 @@ model WorkShift {
   breakStartedAt DateTime?
   breakMinutes   Int       @default(0)
 
+  // آخر موقع للموظف أثناء الدوام
+  lastLat        Float?
+  lastLng        Float?
+  lastAccuracy   Float?
+  lastLocationAt DateTime?
+
   @@index([employeeId])
 }

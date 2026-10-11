@@ -33,6 +33,39 @@ function timeOf(iso: string) {
 export default function ShiftBar() {
   const [state, setState] = useState<ShiftState | null>(null);
   const [busy, setBusy] = useState(false);
+  const [geo, setGeo] = useState<"idle" | "ok" | "denied" | "unsupported">("idle");
+
+  // نتابع الموقع طول ما الدوام شغال (ومش في استراحة)
+  const tracking = !!state?.shift && !state.shift.onBreak;
+
+  useEffect(() => {
+    if (!tracking) return;
+    if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
+      setGeo("unsupported");
+      return;
+    }
+    let lastSent = 0;
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        setGeo("ok");
+        const now = Date.now();
+        if (now - lastSent < 30000) return; // مرة كل 30 ثانية على الأكثر
+        lastSent = now;
+        fetch("/api/staff/location", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            accuracy: pos.coords.accuracy,
+          }),
+        }).catch(() => {});
+      },
+      (err) => setGeo(err.code === 1 ? "denied" : "idle"),
+      { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 }
+    );
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [tracking]);
 
   const load = useCallback(async () => {
     try {
@@ -151,6 +184,22 @@ export default function ShiftBar() {
         >
           {busy ? "جارٍ التحديث..." : "بدء الدوام"}
         </button>
+      )}
+
+      {shift && geo === "ok" && !shift.onBreak && (
+        <span className="text-emerald-600 text-[11px] font-bold text-center">
+          📍 موقعك بيتشارك مع الإدارة أثناء الدوام (سيب الصفحة مفتوحة)
+        </span>
+      )}
+      {shift && geo === "denied" && (
+        <span className="text-red-500 text-[11px] font-bold text-center">
+          الموقع مقفول. فعّل إذن الموقع للمتصفح من الإعدادات عشان الإدارة تتابع مكانك
+        </span>
+      )}
+      {shift && geo === "unsupported" && (
+        <span className="text-amber-600 text-[11px] font-bold text-center">
+          المتصفح ده مش بيدعم تحديد الموقع
+        </span>
       )}
 
       <div className="flex items-center justify-between text-xs">

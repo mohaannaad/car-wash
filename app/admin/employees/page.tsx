@@ -12,9 +12,158 @@ type Employee = {
   role: string;
   isActive: boolean;
   districtId: string | null;
+  onShift?: boolean;
 };
 
+type LocationInfo = {
+  onShift: boolean;
+  name?: string;
+  phone?: string;
+  onBreak?: boolean;
+  startedAt?: string;
+  lat?: number | null;
+  lng?: number | null;
+  accuracy?: number | null;
+  updatedAt?: string | null;
+};
+
+function agoText(iso: string) {
+  const min = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  if (min < 1) return "الآن";
+  if (min < 60) return `منذ ${min} دقيقة`;
+  const h = Math.floor(min / 60);
+  return `منذ ${h} ساعة`;
+}
+
+function LocationModal({ employee, onClose }: { employee: Employee; onClose: () => void }) {
+  const [info, setInfo] = useState<LocationInfo | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      try {
+        const res = await fetch(`/api/admin/employees/${employee.id}/location`);
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        if (alive) {
+          setInfo(data);
+          setFailed(false);
+        }
+      } catch {
+        if (alive) setFailed(true);
+      }
+    };
+    load();
+    const t = setInterval(load, 15000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, [employee.id]);
+
+  const hasPos = info?.onShift && typeof info.lat === "number" && typeof info.lng === "number";
+  const d = 0.004;
+  const mapSrc = hasPos
+    ? `https://www.openstreetmap.org/export/embed.html?bbox=${info!.lng! - d}%2C${info!.lat! - d}%2C${
+        info!.lng! + d
+      }%2C${info!.lat! + d}&layer=mapnik&marker=${info!.lat}%2C${info!.lng}`
+    : "";
+  const stale = info?.updatedAt ? Date.now() - new Date(info.updatedAt).getTime() > 5 * 60000 : false;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-6"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl w-full max-w-2xl p-6 flex flex-col gap-4 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col">
+            <h2 className="text-text-main text-lg font-extrabold">موقع {employee.name}</h2>
+            <span className="text-text-secondary text-xs" dir="ltr">{employee.phone}</span>
+          </div>
+          <button onClick={onClose} className="text-text-secondary text-2xl leading-none px-2">×</button>
+        </div>
+
+        {!info && !failed && (
+          <div className="py-10 text-center text-text-secondary text-sm">جارٍ التحميل...</div>
+        )}
+        {failed && !info && (
+          <div className="py-10 text-center text-red-500 text-sm">تعذر جلب الموقع، حاول مرة تانية</div>
+        )}
+
+        {info && !info.onShift && (
+          <div className="py-10 text-center text-text-secondary text-sm font-bold">
+            الموظف خارج الدوام حالياً، التتبع متاح أثناء الدوام فقط
+          </div>
+        )}
+
+        {info?.onShift && !hasPos && (
+          <div className="py-10 text-center text-amber-600 text-sm font-bold leading-7">
+            الموقع لم يصل بعد.
+            <br />
+            تأكد أن الموظف فاتح صفحة حسابه وسامح للمتصفح بالوصول للموقع.
+            {info.onBreak && <><br />الموظف في استراحة حالياً.</>}
+          </div>
+        )}
+
+        {hasPos && (
+          <>
+            <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
+              <span
+                className={`px-3 py-1 rounded-full ${
+                  info!.onBreak ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600"
+                }`}
+              >
+                {info!.onBreak ? "في استراحة" : "على رأس العمل"}
+              </span>
+              {info!.updatedAt && (
+                <span
+                  className={`px-3 py-1 rounded-full ${
+                    stale ? "bg-red-50 text-red-500" : "bg-[#F4F7F8] text-text-secondary"
+                  }`}
+                >
+                  آخر تحديث: {agoText(info!.updatedAt)}
+                </span>
+              )}
+              {typeof info!.accuracy === "number" && (
+                <span className="px-3 py-1 rounded-full bg-[#F4F7F8] text-text-secondary">
+                  الدقة ≈ {Math.round(info!.accuracy)} م
+                </span>
+              )}
+            </div>
+
+            <iframe
+              key={mapSrc}
+              src={mapSrc}
+              title="موقع الموظف"
+              className="w-full h-[360px] rounded-xl border border-[#EEF2F3]"
+              loading="lazy"
+            />
+
+            <div className="flex items-center justify-between">
+              <span className="text-text-secondary text-xs">يتحدث تلقائياً كل 15 ثانية</span>
+              <a
+                href={`https://www.google.com/maps?q=${info!.lat},${info!.lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary text-sm font-bold hover:underline"
+              >
+                فتح في خرائط جوجل ↗
+              </a>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function EmployeesPage() {
+  const [locationFor, setLocationFor] = useState<Employee | null>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [cities, setCities] = useState<City[]>([]);
   const [loading, setLoading] = useState(true);
@@ -239,7 +388,26 @@ const allDistricts = activeCities.flatMap((c) =>
             <tbody>
               {employees.map((employee) => (
                 <tr key={employee.id} className="border-t border-[#EEF2F3]">
-                  <td className="px-6 py-4 text-text-main text-sm font-bold whitespace-nowrap">{employee.name}</td>
+                  <td className="px-6 py-4 text-text-main text-sm font-bold whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                      <span>{employee.name}</span>
+                      <button
+                        onClick={() => employee.onShift && setLocationFor(employee)}
+                        disabled={!employee.onShift}
+                        title={employee.onShift ? "عرض موقع الموظف" : "الموظف خارج الدوام"}
+                        className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
+                          employee.onShift
+                            ? "bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer"
+                            : "bg-[#F4F7F8] text-[#C5CCD3] cursor-not-allowed"
+                        }`}
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z" />
+                          <circle cx="12" cy="9.5" r="2.5" />
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
                   <td className="px-6 py-4 text-text-secondary text-sm whitespace-nowrap" dir="ltr">{employee.phone}</td>
                   <td className="px-6 py-4 text-text-secondary text-sm whitespace-nowrap">{employee.role}</td>
                   <td className="px-6 py-4">
@@ -278,6 +446,8 @@ const allDistricts = activeCities.flatMap((c) =>
           </table>
         )}
       </div>
+
+      {locationFor && <LocationModal employee={locationFor} onClose={() => setLocationFor(null)} />}
     </div>
   );
 }

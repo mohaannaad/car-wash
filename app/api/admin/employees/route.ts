@@ -5,10 +5,23 @@ import { prisma } from "../../../../lib/prisma";
 export async function GET() {
   try {
     const employees = await prisma.employee.findMany({
-      include: { district: { include: { city: true } } },
+      include: {
+        district: { include: { city: true } },
+        shifts: {
+          where: {
+            endedAt: null,
+            startedAt: { gte: new Date(Date.now() - 16 * 60 * 60 * 1000) },
+          },
+          select: { id: true },
+          take: 1,
+        },
+      },
       orderBy: { createdAt: "asc" },
     });
-    const safe = employees.map(({ password, ...rest }) => rest);
+    const safe = employees.map(({ password, shifts, ...rest }) => ({
+      ...rest,
+      onShift: shifts.length > 0,
+    }));
     return NextResponse.json(safe);
   } catch (error) {
     return NextResponse.json({ error: "فشل في جلب البيانات" }, { status: 500 });
