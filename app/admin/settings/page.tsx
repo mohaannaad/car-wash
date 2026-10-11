@@ -25,6 +25,118 @@ function to24Hour(hour12: number, period: string) {
   return h;
 }
 
+function PasswordCard() {
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [show, setShow] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<{ type: "ok" | "error"; text: string } | null>(null);
+
+  const mismatch = confirmPassword.length > 0 && newPassword !== confirmPassword;
+  const canSubmit =
+    !busy && oldPassword.length > 0 && newPassword.length >= 8 && newPassword === confirmPassword;
+
+  const handleSubmit = async () => {
+    if (!canSubmit) return;
+    if (!confirm("هل أنت متأكد من تغيير كلمة سر الداشبورد؟")) return;
+    setBusy(true);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/admin/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ oldPassword, newPassword, confirmPassword }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMessage({ type: "error", text: data.error || "فشل في تغيير كلمة السر" });
+        return;
+      }
+      setOldPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setMessage({ type: "ok", text: "تم تغيير كلمة السر بنجاح. استخدم الجديدة في تسجيل الدخول القادم." });
+    } catch {
+      setMessage({ type: "error", text: "تعذر الاتصال بالسيرفر، حاول مرة تانية" });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const inputClass = "bg-[#F4F7F8] rounded-xl px-4 py-2.5 text-sm outline-none w-full text-right";
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm p-6 mt-5 max-w-xl">
+      <h2 className="text-text-main text-base font-extrabold mb-1">تغيير كلمة سر الداشبورد</h2>
+      <p className="text-text-secondary text-xs mb-4">
+        اكتب كلمة السر الحالية ثم الجديدة (8 أحرف على الأقل) وأكدها
+      </p>
+
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-text-main text-xs font-bold">كلمة السر الحالية</label>
+          <input
+            type={show ? "text" : "password"}
+            dir="ltr"
+            autoComplete="current-password"
+            value={oldPassword}
+            onChange={(e) => setOldPassword(e.target.value)}
+            className={inputClass}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-text-main text-xs font-bold">كلمة السر الجديدة</label>
+          <input
+            type={show ? "text" : "password"}
+            dir="ltr"
+            autoComplete="new-password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            className={inputClass}
+          />
+          {newPassword.length > 0 && newPassword.length < 8 && (
+            <span className="text-amber-600 text-[11px] font-bold">لسه أقل من 8 أحرف</span>
+          )}
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-text-main text-xs font-bold">تأكيد كلمة السر الجديدة</label>
+          <input
+            type={show ? "text" : "password"}
+            dir="ltr"
+            autoComplete="new-password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            className={inputClass}
+          />
+          {mismatch && <span className="text-red-500 text-[11px] font-bold">التأكيد مش مطابق للكلمة الجديدة</span>}
+        </div>
+
+        <label className="flex items-center gap-2 text-text-secondary text-xs font-bold cursor-pointer w-fit">
+          <input type="checkbox" checked={show} onChange={(e) => setShow(e.target.checked)} />
+          إظهار كلمات السر
+        </label>
+
+        {message && (
+          <p className={`text-sm font-medium ${message.type === "ok" ? "text-emerald-600" : "text-red-500"}`}>
+            {message.text}
+          </p>
+        )}
+
+        <button
+          onClick={handleSubmit}
+          disabled={!canSubmit}
+          className={`self-start px-6 py-3 rounded-xl text-white text-sm font-bold transition-colors ${
+            canSubmit ? "bg-primary" : "bg-disabled cursor-not-allowed"
+          }`}
+        >
+          {busy ? "جارٍ التغيير..." : "تغيير كلمة السر"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const [settings, setSettings] = useState<SettingsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -236,6 +348,8 @@ export default function SettingsPage() {
       >
         {saving ? "جارٍ الحفظ..." : saved ? "تم الحفظ ✓" : "حفظ التعديلات"}
       </button>
+
+      <PasswordCard />
     </div>
   );
 }
