@@ -264,3 +264,10 @@ model WorkShift {
 
   @@index([employeeId])
 }
+
+// كلمة سر الأدمن (مشفّرة) بعد تغييرها من الداشبورد
+model AdminCredential {
+  id           String   @id @default("admin")
+  passwordHash String
+  updatedAt    DateTime @updatedAt
+}

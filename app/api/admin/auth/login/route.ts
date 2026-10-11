@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
+import { safeEqual, verifyAdminPassword } from "../../../../../lib/adminPassword";
 
 export async function POST(request: Request) {
   try {
     const { email, password } = await request.json();
 
-    const correctEmail = process.env.ADMIN_EMAIL;
-    const correctPassword = process.env.ADMIN_PASSWORD;
+    const correctEmail = process.env.ADMIN_EMAIL ?? "";
+    const emailOk = typeof email === "string" && correctEmail.length > 0 && safeEqual(email, correctEmail);
+    const passwordOk = await verifyAdminPassword(password);
 
-    if (email === correctEmail && password === correctPassword) {
+    if (emailOk && passwordOk) {
       const response = NextResponse.json({ success: true });
       response.cookies.set("admin_session", "authenticated", {
         httpOnly: true,
