@@ -5,7 +5,7 @@ import { SPOTS } from "../../../lib/photoSpots";
 
 type Order = {
   id: string;
-  customer: { name: string; phone: string };
+  customer: { name: string; phone: string } | null;
   carType: { name: string };
   service: { name: string };
   plateNumber: string;
@@ -273,7 +273,7 @@ export default function OrdersPage() {
   const filteredOrders = orders.filter((order) => {
     if (!normalizedQuery) return true;
     const serial = order.id.slice(-6).toLowerCase();
-    const phone = order.customer.phone.toLowerCase();
+    const phone = (order.customer?.phone ?? "").toLowerCase();
     return serial.includes(normalizedQuery) || phone.includes(normalizedQuery);
   });
 
@@ -347,8 +347,8 @@ export default function OrdersPage() {
                   <td className="px-6 py-4 text-text-secondary text-xs whitespace-nowrap" dir="ltr">{formatSentAt(order.createdAt)}</td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col">
-                      <span className="text-text-main text-sm font-bold">{order.customer.name}</span>
-                      <span className="text-text-secondary text-xs" dir="ltr">{order.customer.phone}</span>
+                      <span className="text-text-main text-sm font-bold">{order.customer?.name ?? "عميل محذوف"}</span>
+                      <span className="text-text-secondary text-xs" dir="ltr">{order.customer?.phone ?? ""}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-text-secondary text-sm whitespace-nowrap">{order.carType.name}</td>
