@@ -18,10 +18,23 @@ export async function GET() {
       },
       orderBy: { createdAt: "asc" },
     });
-    const safe = employees.map(({ password, shifts, ...rest }) => ({
-      ...rest,
-      onShift: shifts.length > 0,
-    }));
+    const ratings = await prisma.review.groupBy({
+      by: ["employeeId"],
+      _avg: { rating: true },
+      _count: { rating: true },
+    });
+    const ratingById = new Map(
+      ratings.filter((r) => r.employeeId).map((r) => [r.employeeId as string, r] as const)
+    );
+    const safe = employees.map(({ password, shifts, ...rest }) => {
+      const r = ratingById.get(rest.id);
+      return {
+        ...rest,
+        onShift: shifts.length > 0,
+        ratingAvg: r?._avg.rating ?? null,
+        ratingCount: r?._count.rating ?? 0,
+      };
+    });
     return NextResponse.json(safe);
   } catch (error) {
     return NextResponse.json({ error: "فشل في جلب البيانات" }, { status: 500 });

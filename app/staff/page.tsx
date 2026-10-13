@@ -16,6 +16,7 @@ type Order = {
   scheduledTime: string;
   status: string;
   customerCalledAt: string | null;
+  callOutcome?: string | null;
   paymentMethod: string | null;
   when: "past" | "today" | "upcoming";
 };
@@ -120,6 +121,7 @@ export default function StaffOrdersPage() {
         phone={order.customer.phone}
         when={order.when}
         scheduledDate={order.scheduledDate}
+        callOutcome={order.callOutcome}
         onChanged={handleChanged}
       />
     </div>

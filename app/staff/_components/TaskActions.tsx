@@ -13,6 +13,7 @@ type Props = {
   phone: string;
   when: When;
   scheduledDate: string;
+  callOutcome?: string | null;
   onChanged: () => void | Promise<void>;
 };
 
@@ -78,6 +79,7 @@ export default function TaskActions({
   phone,
   when,
   scheduledDate,
+  callOutcome,
   onChanged,
 }: Props) {
   const [busy, setBusy] = useState(false);
@@ -131,6 +133,17 @@ export default function TaskActions({
 
   // أول خطوة: الاتصال بالعميل
   if (status === "PENDING") {
+    // طلب تغيير موعد / إلغاء بانتظار اعتماد الإدارة
+    if (kind === "order" && (callOutcome === "RESCHEDULE_REQUEST" || callOutcome === "CANCEL_REQUEST")) {
+      return (
+        <div className="w-full py-3 px-3 rounded-xl bg-amber-50 text-amber-700 text-xs font-bold text-center leading-6">
+          {callOutcome === "RESCHEDULE_REQUEST"
+            ? "تم تسجيل طلب تغيير الموعد، بانتظار اعتماد الإدارة"
+            : "تم تسجيل طلب الإلغاء، بانتظار اعتماد الإدارة"}
+        </div>
+      );
+    }
+
     if (!customerCalledAt) {
       if (!canCall(phone)) {
         return (
@@ -140,14 +153,64 @@ export default function TaskActions({
         );
       }
       return (
-        <a
-          href={`tel:${phone}`}
-          onClick={() => send({ action: "call" })}
-          className="w-full py-3 rounded-xl font-bold text-white text-sm bg-emerald-500 flex items-center justify-center gap-2"
-        >
-          <PhoneIcon />
-          اتصل بالعميل لتأكيد الموعد
-        </a>
+        <div className="flex flex-col gap-2">
+          {kind === "order" && callOutcome === "NO_ANSWER" && (
+            <span className="text-amber-600 text-xs font-bold text-center leading-6">
+              العميل لم يرد، وتم إرسال رسالة له. يمكنك المحاولة مرة أخرى
+            </span>
+          )}
+          <a
+            href={`tel:${phone}`}
+            onClick={() => send({ action: "call" })}
+            className="w-full py-3 rounded-xl font-bold text-white text-sm bg-emerald-500 flex items-center justify-center gap-2"
+          >
+            <PhoneIcon />
+            اتصل بالعميل لتأكيد الموعد
+          </a>
+        </div>
+      );
+    }
+
+    // الطلبات العادية: نتيجة الاتصال (4 حالات)
+    if (kind === "order") {
+      const choose = async (outcome: string, question?: string) => {
+        if (question && !confirm(question)) return;
+        await send({ action: "outcome", outcome });
+      };
+      return (
+        <div className="flex flex-col gap-2">
+          <span className="text-emerald-600 text-xs font-bold text-center">تم الاتصال بالعميل ✓ — اختر النتيجة</span>
+          <button
+            onClick={() => choose("AGREED")}
+            disabled={busy}
+            className="py-2.5 rounded-xl font-bold text-white text-sm bg-primary disabled:opacity-50"
+          >
+            {busy ? "جارٍ التحديث..." : "العميل وافق على الزيارة"}
+          </button>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => choose("RESCHEDULE_REQUEST", "تسجيل طلب العميل لتغيير الموعد؟ سيتم إرساله للإدارة للاعتماد.")}
+              disabled={busy}
+              className="py-2.5 rounded-xl font-bold text-amber-700 text-xs bg-amber-50 disabled:opacity-50"
+            >
+              طلب تغيير الموعد
+            </button>
+            <button
+              onClick={() => choose("CANCEL_REQUEST", "تسجيل طلب العميل لإلغاء الحجز؟ سيتم إرساله للإدارة للاعتماد.")}
+              disabled={busy}
+              className="py-2.5 rounded-xl font-bold text-red-500 text-xs bg-red-50 disabled:opacity-50"
+            >
+              طلب إلغاء الحجز
+            </button>
+          </div>
+          <button
+            onClick={() => choose("NO_ANSWER", "تأكيد إن العميل لم يرد؟ سيتم إرسال رسالة له.")}
+            disabled={busy}
+            className="py-2.5 rounded-xl font-bold text-text-main text-sm bg-[#F4F7F8] disabled:opacity-50"
+          >
+            العميل لا يرد
+          </button>
+        </div>
       );
     }
 

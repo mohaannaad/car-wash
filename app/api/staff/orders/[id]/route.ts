@@ -28,7 +28,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { action, status, paymentMethod, reason } = body;
+    const { action, status, paymentMethod, reason, outcome } = body;
 
     const order = await prisma.order.findUnique({ where: { id } });
     if (!order || order.employeeId !== employeeId) {
@@ -40,6 +40,51 @@ export async function PATCH(
       const updated = await prisma.order.update({
         where: { id },
         data: { customerCalledAt: order.customerCalledAt ?? new Date() },
+      });
+      return NextResponse.json(updated);
+    }
+
+    // نتيجة الاتصال بالعميل: وافق / تغيير موعد / إلغاء / لا يرد
+    if (action === "outcome") {
+      if (order.status !== "PENDING") {
+        return NextResponse.json({ error: "لا يمكن تحديد النتيجة بعد قبول الطلب" }, { status: 400 });
+      }
+      if (whenOf(order.scheduledDate) === "upcoming") {
+        return NextResponse.json({ error: "موعد الطلب ده لسه ماجاش" }, { status: 400 });
+      }
+      if (!order.customerCalledAt) {
+        return NextResponse.json({ error: "لازم تتصل بالعميل الأول" }, { status: 400 });
+      }
+      if (order.callOutcome === "RESCHEDULE_REQUEST" || order.callOutcome === "CANCEL_REQUEST") {
+        return NextResponse.json({ error: "الطلب بانتظار اعتماد الإدارة" }, { status: 400 });
+      }
+      if (!["AGREED", "RESCHEDULE_REQUEST", "CANCEL_REQUEST", "NO_ANSWER"].includes(outcome)) {
+        return NextResponse.json({ error: "نتيجة الاتصال غير صحيحة" }, { status: 400 });
+      }
+
+      if (outcome === "AGREED") {
+        const updated = await prisma.order.update({
+          where: { id },
+          data: { status: "ON_THE_WAY", callOutcome: "AGREED" },
+        });
+        after(() => notifyOrder(id, "ON_THE_WAY"));
+        return NextResponse.json(updated);
+      }
+
+      if (outcome === "NO_ANSWER") {
+        // يرجع زر الاتصال تاني عشان المندوب يحاول مرة تانية
+        const updated = await prisma.order.update({
+          where: { id },
+          data: { callOutcome: "NO_ANSWER", customerCalledAt: null },
+        });
+        after(() => notifyOrder(id, "NO_ANSWER"));
+        return NextResponse.json(updated);
+      }
+
+      // طلب تغيير موعد أو إلغاء: بانتظار اعتماد الأدمن (من غير رسالة)
+      const updated = await prisma.order.update({
+        where: { id },
+        data: { callOutcome: outcome },
       });
       return NextResponse.json(updated);
     }

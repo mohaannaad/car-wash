@@ -4,7 +4,7 @@ import { prisma } from "../../../../lib/prisma";
 export async function GET() {
   try {
  const orders = await prisma.order.findMany({
-  include: { customer: true, carType: true, service: true, employee: { select: { id: true, name: true, phone: true, role: true, districtId: true, isActive: true } }, district: { include: { city: true } } },
+  include: { customer: true, carType: true, service: true, employee: { select: { id: true, name: true, phone: true, role: true, districtId: true, isActive: true } }, district: { include: { city: true } }, review: { select: { rating: true, comment: true } } },
   orderBy: { createdAt: "desc" },
 });
     return NextResponse.json(orders);

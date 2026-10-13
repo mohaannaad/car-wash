@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { SPOTS } from "../../../lib/photoSpots";
+import { SMS_TYPE_LABELS } from "../../../lib/smsLabels";
 
 type Order = {
   id: string;
@@ -20,6 +21,8 @@ type Order = {
   createdAt: string;
   paymentMethod?: string | null;
   rejectionReason?: string | null;
+  callOutcome?: string | null;
+  review?: { rating: number; comment: string | null } | null;
 };
 
 type Employee = { id: string; name: string; isActive: boolean };
@@ -147,6 +150,18 @@ function PhotosModal({ order, onClose }: { order: Order; onClose: () => void }) 
           </div>
         )}
 
+        {order.review && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex flex-col gap-1">
+            <span className="text-amber-700 text-sm font-bold">
+              تقييم العميل: {"★".repeat(order.review.rating)}
+              {"☆".repeat(5 - order.review.rating)} ({order.review.rating}/5)
+            </span>
+            {order.review.comment && (
+              <span className="text-amber-700 text-sm leading-6">{order.review.comment}</span>
+            )}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
           <div className="bg-[#F4F7F8] rounded-xl p-3 flex flex-col gap-1">
             <span className="text-text-secondary">اتصال الموظف بالعميل</span>
@@ -179,12 +194,219 @@ function PhotosModal({ order, onClose }: { order: Order; onClose: () => void }) 
   );
 }
 
+type SmsLogRow = {
+  id: string;
+  type: string;
+  phone: string;
+  status: string;
+  error: string | null;
+  createdAt: string;
+};
+
+// سجل رسائل SMS الخاصة بطلب + إعادة الإرسال يدوياً
+function SmsModal({ order, onClose }: { order: Order; onClose: () => void }) {
+  const [logs, setLogs] = useState<SmsLogRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const load = async () => {
+    try {
+      const res = await fetch(`/api/admin/sms-logs?orderId=${order.id}`);
+      if (res.ok) setLogs(await res.json());
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [order.id]);
+
+  const resend = async (log: SmsLogRow) => {
+    if (!confirm("إعادة إرسال هذه الرسالة للعميل؟")) return;
+    setBusyId(log.id);
+    try {
+      const res = await fetch(`/api/admin/sms-logs/${log.id}/resend`, { method: "POST" });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        alert(d.error || "تعذر إعادة الإرسال");
+      }
+    } finally {
+      setBusyId(null);
+      await load();
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div
+        className="bg-white rounded-2xl w-full max-w-3xl max-h-[88vh] overflow-y-auto p-6 flex flex-col gap-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="text-text-main text-lg font-extrabold">
+            رسائل الطلب <span dir="ltr">#{order.id.slice(-6).toUpperCase()}</span>
+          </h2>
+          <button onClick={onClose} className="text-text-secondary text-sm font-bold hover:text-red-500">
+            إغلاق
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="p-6 text-center text-text-secondary text-sm">جارٍ التحميل...</div>
+        ) : logs.length === 0 ? (
+          <div className="p-6 text-center text-text-secondary text-sm bg-[#F4F7F8] rounded-xl">
+            لا توجد رسائل مرسلة لهذا الطلب بعد
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-right border-b border-[#EEF2F3]">
+                  <th className="px-3 py-2 text-text-secondary text-xs font-bold whitespace-nowrap">نوع الرسالة</th>
+                  <th className="px-3 py-2 text-text-secondary text-xs font-bold whitespace-nowrap">رقم الجوال</th>
+                  <th className="px-3 py-2 text-text-secondary text-xs font-bold whitespace-nowrap">وقت الإرسال</th>
+                  <th className="px-3 py-2 text-text-secondary text-xs font-bold whitespace-nowrap">الحالة</th>
+                  <th className="px-3 py-2 text-text-secondary text-xs font-bold whitespace-nowrap">إجراء</th>
+                </tr>
+              </thead>
+              <tbody>
+                {logs.map((log) => (
+                  <tr key={log.id} className="border-t border-[#EEF2F3]">
+                    <td className="px-3 py-3 text-text-main text-sm font-bold whitespace-nowrap">
+                      {SMS_TYPE_LABELS[log.type] ?? log.type}
+                    </td>
+                    <td className="px-3 py-3 text-text-secondary text-xs whitespace-nowrap" dir="ltr">{log.phone}</td>
+                    <td className="px-3 py-3 text-text-secondary text-xs whitespace-nowrap">{formatSentAt(log.createdAt)}</td>
+                    <td className="px-3 py-3 whitespace-nowrap">
+                      <span
+                        title={log.error ?? undefined}
+                        className={`text-xs font-bold px-3 py-1 rounded-full ${
+                          log.status === "SENT" ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"
+                        }`}
+                      >
+                        {log.status === "SENT" ? "تم الإرسال" : "فشل الإرسال"}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap">
+                      <button
+                        onClick={() => resend(log)}
+                        disabled={busyId === log.id}
+                        className="text-primary text-xs font-bold px-3 py-1.5 rounded-full bg-primary-light disabled:opacity-50"
+                      >
+                        {busyId === log.id ? "جارٍ الإرسال..." : "إعادة إرسال"}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// "16:30" -> "04:30 م" (نفس صيغة وقت الحجز)
+function to12h(t: string) {
+  const [h, m] = t.split(":").map(Number);
+  const ap = h >= 12 ? "م" : "ص";
+  const hh = h % 12 === 0 ? 12 : h % 12;
+  return `${String(hh).padStart(2, "0")}:${String(m).padStart(2, "0")} ${ap}`;
+}
+
+function RescheduleModal({
+  order,
+  onClose,
+  onDone,
+}: {
+  order: Order;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const submit = async () => {
+    if (!date || !time) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/admin/orders/${order.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "approve_reschedule", date, time: to12h(time) }),
+      });
+      if (!res.ok) {
+        alert("تعذر اعتماد الموعد الجديد، حاول مرة أخرى");
+        return;
+      }
+      onDone();
+      onClose();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div
+        className="bg-white rounded-2xl w-full max-w-md p-6 flex flex-col gap-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="text-text-main text-lg font-extrabold">
+          اعتماد موعد جديد <span dir="ltr">#{order.id.slice(-6).toUpperCase()}</span>
+        </h2>
+        <p className="text-text-secondary text-xs leading-6">
+          بعد الاعتماد يبقى الطلب بنفس الرقم وتُرسل رسالة تغيير الموعد للعميل تلقائيًا.
+        </p>
+        <label className="flex flex-col gap-1.5 text-xs font-bold text-text-main">
+          التاريخ الجديد
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="border border-[#E4E7EC] rounded-xl p-3 text-sm outline-none focus:border-primary"
+          />
+        </label>
+        <label className="flex flex-col gap-1.5 text-xs font-bold text-text-main">
+          الوقت الجديد
+          <input
+            type="time"
+            value={time}
+            onChange={(e) => setTime(e.target.value)}
+            className="border border-[#E4E7EC] rounded-xl p-3 text-sm outline-none focus:border-primary"
+          />
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={submit}
+            disabled={busy || !date || !time}
+            className={`py-2.5 rounded-xl font-bold text-white text-sm ${
+              busy || !date || !time ? "bg-disabled cursor-not-allowed" : "bg-primary"
+            }`}
+          >
+            {busy ? "جارٍ الاعتماد..." : "اعتماد وإرسال الرسالة"}
+          </button>
+          <button onClick={onClose} className="py-2.5 rounded-xl font-bold text-text-main text-sm bg-[#F4F7F8]">
+            إلغاء
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [photosOrder, setPhotosOrder] = useState<Order | null>(null);
+  const [rescheduleOrder, setRescheduleOrder] = useState<Order | null>(null);
+  const [smsOrder, setSmsOrder] = useState<Order | null>(null);
 
   const loadOrders = async () => {
     try {
@@ -226,6 +448,18 @@ export default function OrdersPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
     });
+  };
+
+  // اعتماد/رفض طلبات المندوب (تغيير موعد / إلغاء)
+  const requestAction = async (id: string, action: "approve_cancel" | "dismiss_request", question: string) => {
+    if (!confirm(question)) return;
+    const res = await fetch(`/api/admin/orders/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action }),
+    });
+    if (!res.ok) alert("تعذر تنفيذ الإجراء، حاول مرة أخرى");
+    await loadOrders();
   };
 
   const handleEmployeeChange = async (id: string, employeeId: string) => {
@@ -336,6 +570,7 @@ export default function OrdersPage() {
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الدفع</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الموظف المسؤول</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الحالة</th>
+                <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">التقييم</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">التفاصيل</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">إجراءات</th>
               </tr>
@@ -417,10 +652,67 @@ export default function OrdersPage() {
                         <option key={value} value={value}>{label}</option>
                       ))}
                     </select>
+                    {order.status === "PENDING" && order.callOutcome === "RESCHEDULE_REQUEST" && (
+                      <div className="mt-2 max-w-[230px] bg-amber-50 rounded-xl p-2.5 flex flex-col gap-2">
+                        <span className="text-amber-700 text-[11px] font-bold">العميل طلب تغيير الموعد</span>
+                        <div className="flex gap-1.5">
+                          <button
+                            onClick={() => setRescheduleOrder(order)}
+                            className="flex-1 bg-primary text-white text-[11px] font-bold py-1.5 rounded-lg"
+                          >
+                            تحديد موعد جديد
+                          </button>
+                          <button
+                            onClick={() => requestAction(order.id, "dismiss_request", "إرجاع الطلب للمندوب بدون تغيير؟")}
+                            className="bg-white text-text-secondary text-[11px] font-bold px-2 py-1.5 rounded-lg"
+                          >
+                            رفض
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    {order.status === "PENDING" && order.callOutcome === "CANCEL_REQUEST" && (
+                      <div className="mt-2 max-w-[230px] bg-red-50 rounded-xl p-2.5 flex flex-col gap-2">
+                        <span className="text-red-600 text-[11px] font-bold">العميل طلب إلغاء الحجز</span>
+                        <div className="flex gap-1.5">
+                          <button
+                            onClick={() =>
+                              requestAction(order.id, "approve_cancel", "اعتماد الإلغاء؟ ستُرسل رسالة الإلغاء للعميل.")
+                            }
+                            className="flex-1 bg-red-500 text-white text-[11px] font-bold py-1.5 rounded-lg"
+                          >
+                            اعتماد الإلغاء
+                          </button>
+                          <button
+                            onClick={() => requestAction(order.id, "dismiss_request", "إرجاع الطلب للمندوب بدون إلغاء؟")}
+                            className="bg-white text-text-secondary text-[11px] font-bold px-2 py-1.5 rounded-lg"
+                          >
+                            رفض
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    {order.status === "PENDING" && order.callOutcome === "NO_ANSWER" && (
+                      <div className="mt-2 max-w-[230px] text-[11px] text-amber-600 font-bold">
+                        العميل لم يرد على المندوب
+                      </div>
+                    )}
                     {order.status === "CANCELLED" && order.rejectionReason && (
                       <div className="mt-1.5 max-w-[220px] text-[11px] text-red-500 leading-5">
                         <span className="font-bold">مرفوض من الموظف:</span> {order.rejectionReason}
                       </div>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {order.review ? (
+                      <span
+                        className="text-amber-600 text-xs font-bold"
+                        title={order.review.comment ?? undefined}
+                      >
+                        ★ {order.review.rating}/5
+                      </span>
+                    ) : (
+                      <span className="text-text-secondary text-xs">—</span>
                     )}
                   </td>
                   <td className="px-6 py-4">
@@ -436,9 +728,17 @@ export default function OrdersPage() {
                     )}
                   </td>
                   <td className="px-6 py-4">
-                    <button onClick={() => handleDelete(order.id)} className="text-red-500 text-xs font-bold hover:underline whitespace-nowrap">
-                      حذف
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setSmsOrder(order)}
+                        className="text-primary text-xs font-bold hover:underline whitespace-nowrap"
+                      >
+                        الرسائل
+                      </button>
+                      <button onClick={() => handleDelete(order.id)} className="text-red-500 text-xs font-bold hover:underline whitespace-nowrap">
+                        حذف
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -448,6 +748,14 @@ export default function OrdersPage() {
       </div>
 
       {photosOrder && <PhotosModal order={photosOrder} onClose={() => setPhotosOrder(null)} />}
+      {smsOrder && <SmsModal order={smsOrder} onClose={() => setSmsOrder(null)} />}
+      {rescheduleOrder && (
+        <RescheduleModal
+          order={rescheduleOrder}
+          onClose={() => setRescheduleOrder(null)}
+          onDone={loadOrders}
+        />
+      )}
     </div>
   );
 }

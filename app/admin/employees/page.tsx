@@ -13,6 +13,8 @@ type Employee = {
   isActive: boolean;
   districtId: string | null;
   onShift?: boolean;
+  ratingAvg?: number | null;
+  ratingCount?: number;
 };
 
 type LocationInfo = {
@@ -380,6 +382,7 @@ const allDistricts = activeCities.flatMap((c) =>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الاسم</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">رقم الجوال</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الوظيفة</th>
+                <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">التقييم</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">المنطقة</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">الحالة</th>
                 <th className="px-6 py-3 text-text-secondary text-xs font-bold whitespace-nowrap">إجراءات</th>
@@ -410,6 +413,16 @@ const allDistricts = activeCities.flatMap((c) =>
                   </td>
                   <td className="px-6 py-4 text-text-secondary text-sm whitespace-nowrap" dir="ltr">{employee.phone}</td>
                   <td className="px-6 py-4 text-text-secondary text-sm whitespace-nowrap">{employee.role}</td>
+                  <td className="px-6 py-4 text-sm whitespace-nowrap">
+                    {employee.ratingCount && employee.ratingAvg != null ? (
+                      <span className="text-amber-600 font-bold">
+                        ★ {employee.ratingAvg.toFixed(1)}{" "}
+                        <span className="text-text-secondary text-xs font-normal">({employee.ratingCount})</span>
+                      </span>
+                    ) : (
+                      <span className="text-text-secondary text-xs">لا يوجد</span>
+                    )}
+                  </td>
                   <td className="px-6 py-4">
                     <select
                       value={employee.districtId || ""}
