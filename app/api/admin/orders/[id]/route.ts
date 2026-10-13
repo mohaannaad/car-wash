@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { prisma } from "../../../../../lib/prisma";
+import { notifyOrder, eventForStatus } from "../../../../../lib/smsEvents";
 
 export async function PATCH(
   request: Request,
@@ -10,6 +11,7 @@ export async function PATCH(
     const body = await request.json();
     const { status, employeeId } = body;
 
+    const before = status !== undefined ? await prisma.order.findUnique({ where: { id }, select: { status: true } }) : null;
     const order = await prisma.order.update({
       where: { id },
       data: {
@@ -18,6 +20,10 @@ export async function PATCH(
       },
     });
 
+    if (status !== undefined && before && before.status !== status) {
+      const ev = eventForStatus(status);
+      if (ev) after(() => notifyOrder(id, ev));
+    }
     return NextResponse.json(order);
   } catch (error) {
     return NextResponse.json({ error: "فشل في التحديث" }, { status: 500 });

@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { prisma } from "../../../lib/prisma";
+import { notifyOrderCreated } from "../../../lib/smsEvents";
 
 async function findLeastBusyEmployee(districtId?: string) {
   const activeEmployees = await prisma.employee.findMany({
@@ -54,6 +55,8 @@ export async function POST(request: Request) {
         extrasSnapshot: extras ?? [],
       },
     });
+
+    after(() => notifyOrderCreated(order.id));
 
     return NextResponse.json(order, { status: 201 });
   } catch (error) {

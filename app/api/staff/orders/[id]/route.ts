@@ -1,9 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { cookies } from "next/headers";
 import { OrderStatus, PaymentMethod } from "@prisma/client";
 import { prisma } from "../../../../../lib/prisma";
 import { whenOf } from "../../../../../lib/riyadhDate";
 import { hasAllPhotos } from "../../../../../lib/photoGate";
+import { notifyOrder, eventForStatus } from "../../../../../lib/smsEvents";
 
 const nextStatus: Record<string, string | null> = {
   PENDING: "CONFIRMED",
@@ -66,6 +67,7 @@ export async function PATCH(
           rejectedAt: new Date(),
         },
       });
+      after(() => notifyOrder(id, "cancelled"));
       return NextResponse.json(updated);
     }
 
@@ -108,6 +110,8 @@ export async function PATCH(
     }
 
     const updated = await prisma.order.update({ where: { id }, data });
+    const ev = eventForStatus(status);
+    if (ev) after(() => notifyOrder(id, ev));
     return NextResponse.json(updated);
   } catch (error) {
     return NextResponse.json({ error: "فشل في التحديث" }, { status: 500 });

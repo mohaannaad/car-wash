@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { prisma } from "../../../lib/prisma";
+import { notifySubscriptionCreated } from "../../../lib/smsEvents";
 
 async function assignEmployeesForWashes(count: number, districtId?: string) {
   const activeEmployees = await prisma.employee.findMany({
@@ -64,6 +65,8 @@ export async function POST(request: Request) {
         },
       },
     });
+
+    after(() => notifySubscriptionCreated(subscription.id));
 
     return NextResponse.json(subscription, { status: 201 });
   } catch (error) {
