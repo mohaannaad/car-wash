@@ -82,6 +82,7 @@ district           District?          @relation(fields: [districtId], references
   orders             Order[]
   subscriptionWashes SubscriptionWash[]
     shifts             WorkShift[]
+  reviews            Review[]
 }
 
 // ===== الطلبات =====
@@ -132,6 +133,10 @@ district      District?    @relation(fields: [districtId], references: [id], onD
   rejectedAt      DateTime?
   pointsAwarded   Int       @default(0)
     photos TaskPhoto[]
+  callOutcome     CallOutcome?
+  reviewToken     String?   @unique
+  review          Review?
+  smsLogs         SmsLog[]
 }
 
 model OrderExtra {
@@ -270,4 +275,43 @@ model AdminCredential {
   id           String   @id @default("admin")
   passwordHash String
   updatedAt    DateTime @updatedAt
+}
+
+// ===== نتيجة اتصال المندوب بالعميل =====
+enum CallOutcome {
+  AGREED
+  RESCHEDULE_REQUEST
+  CANCEL_REQUEST
+  NO_ANSWER
+}
+
+// ===== سجل رسائل SMS =====
+model SmsLog {
+  id        String   @id @default(cuid())
+  orderId   String?
+  order     Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  washId    String?
+  type      String
+  phone     String
+  body      String
+  status    String
+  error     String?
+  createdAt DateTime @default(now())
+
+  @@index([orderId])
+  @@index([createdAt])
+}
+
+// ===== تقييم العميل للموظف =====
+model Review {
+  id         String   @id @default(cuid())
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId    String   @unique
+  employee   Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  employeeId String?
+  rating     Int
+  comment    String?
+  createdAt  DateTime @default(now())
+
+  @@index([employeeId])
 }

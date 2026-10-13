@@ -1,6 +1,6 @@
 import { NextResponse, after } from "next/server";
 import { prisma } from "../../../../../lib/prisma";
-import { notifyOrder, eventForStatus } from "../../../../../lib/smsEvents";
+import { notifyOrder } from "../../../../../lib/smsEvents";
 
 export async function PATCH(
   request: Request,
@@ -21,8 +21,9 @@ export async function PATCH(
     });
 
     if (status !== undefined && before && before.status !== status) {
-      const ev = eventForStatus(status);
-      if (ev) after(() => notifyOrder(id, ev));
+      if (status === "ON_THE_WAY" || status === "COMPLETED") {
+        after(() => notifyOrder(id, status));
+      }
     }
     return NextResponse.json(order);
   } catch (error) {
