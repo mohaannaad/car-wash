@@ -61,9 +61,7 @@ export function notifyOrder(orderId: string, event: SmsEvent) {
     if (!order?.customer?.phone) return;
     const res = await sendSms(
       order.customer.phone,
-      bodyFor(event, order.scheduledDate, order.scheduledTime),
-      undefined,
-      "transactional"
+      bodyFor(event, order.scheduledDate, order.scheduledTime)
     );
     if (!res.ok) console.error("[sms] order", event, res.status, res.error ?? res.data);
   });
@@ -80,9 +78,7 @@ export function notifyWash(washId: string, event: SmsEvent) {
     if (!wash || !phone) return;
     const res = await sendSms(
       phone,
-      bodyFor(event, wash.scheduledDate, wash.scheduledTime),
-      undefined,
-      "transactional"
+      bodyFor(event, wash.scheduledDate, wash.scheduledTime)
     );
     if (!res.ok) console.error("[sms] wash", event, res.status, res.error ?? res.data);
   });
@@ -101,9 +97,7 @@ export function notifyOrderCreated(orderId: string) {
     if (!order) return;
     await sendSms(
       adminPhone,
-      `طلب جديد من ${order.customer?.name ?? "عميل"} يوم ${fmtDate(order.scheduledDate)} الساعة ${order.scheduledTime}`,
-      undefined,
-      "transactional"
+      `طلب جديد من ${order.customer?.name ?? "عميل"} يوم ${fmtDate(order.scheduledDate)} الساعة ${order.scheduledTime}`
     );
   });
 }
@@ -119,18 +113,14 @@ export function notifySubscriptionCreated(subscriptionId: string) {
     if (sub.customer?.phone) {
       await sendSms(
         sub.customer.phone,
-        `${BRAND}: تم تفعيل اشتراكك الشهري (${sub.package.washCount} غسلات). شكراً لك`,
-        undefined,
-        "transactional"
+        `${BRAND}: تم تفعيل اشتراكك الشهري (${sub.package.washCount} غسلات). شكراً لك`
       );
     }
     const adminPhone = process.env.ADMIN_ALERT_PHONE;
     if (adminPhone) {
       await sendSms(
         adminPhone,
-        `اشتراك جديد من ${sub.customer?.name ?? "عميل"} - ${sub.package.name}`,
-        undefined,
-        "transactional"
+        `اشتراك جديد من ${sub.customer?.name ?? "عميل"} - ${sub.package.name}`
       );
     }
   });
