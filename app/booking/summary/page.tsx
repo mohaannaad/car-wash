@@ -49,7 +49,12 @@ export default function SummaryStep() {
           totalPrice: total,
         }),
       });
-           if (!res.ok) throw new Error();
+      if (res.status === 409) {
+        const data = await res.json().catch(() => null);
+        setError(data?.error ?? "هذا الموعد اكتمل حجزه، من فضلك اختر موعدًا آخر");
+        return;
+      }
+      if (!res.ok) throw new Error();
       const order = await res.json();
       resetBooking();
       router.push(`/booking/confirmation?orderId=${order.id}`);
@@ -113,4 +118,4 @@ export default function SummaryStep() {
       </div>
     </main>
   );
-}
+}

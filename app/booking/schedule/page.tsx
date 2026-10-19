@@ -38,7 +38,8 @@ function buildNext14Days() {
 
 export default function ScheduleStep() {
   const router = useRouter();
-  const { setDate, setTime } = useBooking();
+  const { booking, setDate, setTime } = useBooking();
+  const districtId = booking.area?.districtId;
 
   const [workHours, setWorkHours] = useState<{ start: number; end: number } | null>(null);
 
@@ -62,6 +63,35 @@ export default function ScheduleStep() {
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
 
+  const [fullTimes, setFullTimes] = useState<string[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+
+  useEffect(() => {
+    if (!selectedDay) return;
+    let cancelled = false;
+    setLoadingSlots(true);
+    setFullTimes([]);
+    const query = new URLSearchParams({ date: selectedDay });
+    if (districtId) query.set("districtId", districtId);
+    fetch(`/api/availability?${query.toString()}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return;
+        const full: string[] = Array.isArray(data.full) ? data.full : [];
+        setFullTimes(full);
+        setSelectedTime((prev) => (prev && full.includes(prev) ? null : prev));
+      })
+      .catch(() => {
+        if (!cancelled) setFullTimes([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingSlots(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedDay, districtId]);
+
   const now = new Date();
   const isToday = (dayKey: string) => dayKey === now.toISOString().split("T")[0];
 
@@ -71,7 +101,7 @@ export default function ScheduleStep() {
   };
 
   const availableSlotsForSelectedDay = selectedDay
-    ? timeSlots.filter((slot) => !isSlotDisabled(selectedDay, slot.hour))
+    ? timeSlots.filter((slot) => !isSlotDisabled(selectedDay, slot.hour) && !fullTimes.includes(slot.label))
     : [];
 
   const handleSelectDay = (dayKey: string) => {
@@ -138,14 +168,15 @@ export default function ScheduleStep() {
         {selectedDay && (
           <div>
             <span className="text-text-main text-sm font-bold mb-3 block">اختر الوقت</span>
-            {availableSlotsForSelectedDay.length === 0 ? (
+            {!loadingSlots && availableSlotsForSelectedDay.length === 0 ? (
               <p className="text-text-secondary text-sm">
                 لا توجد مواعيد متاحة اليوم، من فضلك اختر يومًا آخر
               </p>
             ) : (
               <div className="grid grid-cols-3 gap-2.5">
                 {timeSlots.map((slot) => {
-                  const disabled = isSlotDisabled(selectedDay, slot.hour);
+                  const isFull = fullTimes.includes(slot.label);
+                  const disabled = loadingSlots || isFull || isSlotDisabled(selectedDay, slot.hour);
                   const isSelected = selectedTime === slot.label;
                   return (
                     <button
@@ -161,6 +192,7 @@ export default function ScheduleStep() {
                       }`}
                     >
                       {slot.label}
+                      {isFull && <span className="block text-[10px] font-medium mt-0.5">محجوز</span>}
                     </button>
                   );
                 })}
@@ -183,4 +215,4 @@ export default function ScheduleStep() {
       </div>
     </main>
   );
-}
+}

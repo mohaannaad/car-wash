@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSubscription } from "../../context/SubscriptionContext";
 
@@ -49,6 +49,33 @@ export default function SubscriptionSchedulePage() {
   const [appointments, setLocalAppointments] = useState<Appointment[]>([]);
   const [activeDate, setActiveDate] = useState<string | null>(null);
 
+  const districtId = subscription.area?.districtId;
+  const [fullTimes, setFullTimes] = useState<string[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+
+  useEffect(() => {
+    if (!activeDate) return;
+    let cancelled = false;
+    setLoadingSlots(true);
+    setFullTimes([]);
+    const query = new URLSearchParams({ date: activeDate });
+    if (districtId) query.set("districtId", districtId);
+    fetch(`/api/availability?${query.toString()}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled) setFullTimes(Array.isArray(data.full) ? data.full : []);
+      })
+      .catch(() => {
+        if (!cancelled) setFullTimes([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingSlots(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeDate, districtId]);
+
   const now = new Date();
   const todayKey = now.toISOString().split("T")[0];
 
@@ -92,12 +119,12 @@ export default function SubscriptionSchedulePage() {
   const handleConfirm = () => {
     if (appointments.length !== washCount) return;
     setAppointments(appointments);
-    router.push("/subscriptions/area");
+    router.push("/subscriptions/customer");
   };
 
   const isComplete = appointments.length === washCount;
   const availableSlotsForActiveDate = activeDate
-    ? timeSlots.filter((slot) => !isSlotDisabled(activeDate, slot.hour))
+    ? timeSlots.filter((slot) => !isSlotDisabled(activeDate, slot.hour) && !fullTimes.includes(slot.label))
     : [];
 
   return (
@@ -166,12 +193,13 @@ export default function SubscriptionSchedulePage() {
         {activeDate && (
           <div>
             <span className="text-text-main text-sm font-bold mb-3 block">اختر الوقت ليوم {formatLabel(activeDate)}</span>
-            {availableSlotsForActiveDate.length === 0 ? (
+            {!loadingSlots && availableSlotsForActiveDate.length === 0 ? (
               <p className="text-text-secondary text-sm">لا توجد مواعيد متاحة في هذا اليوم</p>
             ) : (
               <div className="grid grid-cols-3 gap-2.5">
                 {timeSlots.map((slot) => {
-                  const disabled = isSlotDisabled(activeDate, slot.hour);
+                  const isFull = fullTimes.includes(slot.label);
+                  const disabled = loadingSlots || isFull || isSlotDisabled(activeDate, slot.hour);
                   const isSelected = appointmentFor(activeDate)?.time === slot.label;
                   return (
                     <button
@@ -187,6 +215,7 @@ export default function SubscriptionSchedulePage() {
                       }`}
                     >
                       {slot.label}
+                      {isFull && <span className="block text-[10px] font-medium mt-0.5">محجوز</span>}
                     </button>
                   );
                 })}
@@ -209,4 +238,4 @@ export default function SubscriptionSchedulePage() {
       </div>
     </main>
   );
-}
+}

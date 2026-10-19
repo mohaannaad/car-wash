@@ -31,7 +31,7 @@ export default function SubscriptionsPage() {
 
   const handleSelect = (pkg: Package) => {
     setPackage({ id: pkg.id, name: pkg.name, washCount: pkg.washCount, serviceLabel: pkg.serviceLabel, price: pkg.price });
-    router.push("/subscriptions/schedule");
+    router.push("/subscriptions/area");
   };
 
   return (
@@ -94,4 +94,4 @@ export default function SubscriptionsPage() {
       </div>
     </main>
   );
-}
+}

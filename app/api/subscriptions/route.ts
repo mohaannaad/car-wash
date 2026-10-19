@@ -1,33 +1,7 @@
 import { NextResponse, after } from "next/server";
 import { prisma } from "../../../lib/prisma";
 import { notifySubscriptionCreated } from "../../../lib/smsEvents";
-
-async function assignEmployeesForWashes(count: number, districtId?: string) {
-  const activeEmployees = await prisma.employee.findMany({
-    where: { isActive: true, ...(districtId && { districtId }) },
-  });
-  if (activeEmployees.length === 0) return Array(count).fill(null);
-
-  const loads = await Promise.all(
-    activeEmployees.map(async (emp) => {
-      const openOrders = await prisma.order.count({
-        where: { employeeId: emp.id, status: { notIn: ["COMPLETED", "CANCELLED"] } },
-      });
-      const openWashes = await prisma.subscriptionWash.count({
-        where: { employeeId: emp.id, status: { notIn: ["COMPLETED", "CANCELLED"] } },
-      });
-      return { id: emp.id, load: openOrders + openWashes };
-    })
-  );
-
-  const assignments: (string | null)[] = [];
-  for (let i = 0; i < count; i++) {
-    loads.sort((a, b) => a.load - b.load);
-    assignments.push(loads[0].id);
-    loads[0].load += 1;
-  }
-  return assignments;
-}
+import { lockDistrict, pickEmployeeForSlot } from "../../../lib/capacity";
 
 export async function POST(request: Request) {
   try {
@@ -45,26 +19,52 @@ export async function POST(request: Request) {
     });
 
     const typedAppointments = appointments as { date: string; time: string }[];
-    const employeeAssignments = await assignEmployeesForWashes(typedAppointments.length, districtId);
+    const result = await prisma.$transaction(
+      async (tx) => {
+        await lockDistrict(tx, districtId);
 
-    const subscription = await prisma.subscription.create({
-      data: {
-        customerId: customerRecord.id,
-        packageId,
-        districtId: districtId ?? undefined,
-        plateNumber,
-        locationLat: location.lat,
-        locationLng: location.lng,
-        locationText: location.address,
-        washes: {
-          create: typedAppointments.map((a, index) => ({
-            scheduledDate: new Date(a.date),
-            scheduledTime: a.time,
-            employeeId: employeeAssignments[index] ?? undefined,
-          })),
-        },
+        const extraLoad = new Map<string, number>();
+        const assignments: (string | null)[] = [];
+        for (const a of typedAppointments) {
+          const pick = await pickEmployeeForSlot(tx, districtId, new Date(a.date), a.time, extraLoad);
+          if (pick.full) return { full: true as const, date: a.date, time: a.time };
+          assignments.push(pick.employeeId);
+          if (pick.employeeId) extraLoad.set(pick.employeeId, (extraLoad.get(pick.employeeId) ?? 0) + 1);
+        }
+
+        const created = await tx.subscription.create({
+          data: {
+            customerId: customerRecord.id,
+            packageId,
+            districtId: districtId ?? undefined,
+            plateNumber,
+            locationLat: location.lat,
+            locationLng: location.lng,
+            locationText: location.address,
+            washes: {
+              create: typedAppointments.map((a, index) => ({
+                scheduledDate: new Date(a.date),
+                scheduledTime: a.time,
+                employeeId: assignments[index] ?? undefined,
+              })),
+            },
+          },
+        });
+        return { full: false as const, subscription: created };
       },
-    });
+      { timeout: 20000 }
+    );
+
+    if (result.full) {
+      return NextResponse.json(
+        {
+          error: `الموعد ${result.date} - ${result.time} اكتمل حجزه، من فضلك اختر موعدًا آخر`,
+          code: "SLOT_FULL",
+        },
+        { status: 409 }
+      );
+    }
+    const subscription = result.subscription;
 
     after(() => notifySubscriptionCreated(subscription.id));
 

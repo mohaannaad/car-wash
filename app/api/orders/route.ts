@@ -1,32 +1,14 @@
 import { NextResponse, after } from "next/server";
 import { prisma } from "../../../lib/prisma";
 import { notifyOrderCreated } from "../../../lib/smsEvents";
-
-async function findLeastBusyEmployee(districtId?: string) {
-  const activeEmployees = await prisma.employee.findMany({
-    where: { isActive: true, ...(districtId && { districtId }) },
-  });
-  if (activeEmployees.length === 0) return null;
-
-  const loads = await Promise.all(
-    activeEmployees.map(async (emp) => {
-      const openOrders = await prisma.order.count({
-        where: { employeeId: emp.id, status: { notIn: ["COMPLETED", "CANCELLED"] } },
-      });
-      return { id: emp.id, openOrders };
-    })
-  );
-
-  loads.sort((a, b) => a.openOrders - b.openOrders);
-  return loads[0].id;
-}
+import { lockDistrict, pickEmployeeForSlot } from "../../../lib/capacity";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { carTypeId, serviceId, extras, districtId, plateNumber, location, date, time, customer, totalPrice } = body;
 
-    if (!carTypeId || !serviceId || !customer?.phone || !location) {
+    if (!carTypeId || !serviceId || !customer?.phone || !location || !date || !time) {
       return NextResponse.json({ error: "بيانات ناقصة" }, { status: 400 });
     }
 
@@ -36,25 +18,41 @@ export async function POST(request: Request) {
       create: { name: customer.name, phone: customer.phone },
     });
 
-    const assignedEmployeeId = await findLeastBusyEmployee(districtId);
+    const result = await prisma.$transaction(
+      async (tx) => {
+        await lockDistrict(tx, districtId);
+        const pick = await pickEmployeeForSlot(tx, districtId, new Date(date), time);
+        if (pick.full) return { full: true as const };
 
-    const order = await prisma.order.create({
-      data: {
-        customerId: customerRecord.id,
-        carTypeId,
-        serviceId,
-        employeeId: assignedEmployeeId ?? undefined,
-        districtId: districtId ?? undefined,
-        plateNumber,
-        locationLat: location.lat,
-        locationLng: location.lng,
-        locationText: location.address,
-        scheduledDate: new Date(date),
-        scheduledTime: time,
-        totalPrice,
-        extrasSnapshot: extras ?? [],
+        const created = await tx.order.create({
+          data: {
+            customerId: customerRecord.id,
+            carTypeId,
+            serviceId,
+            employeeId: pick.employeeId ?? undefined,
+            districtId: districtId ?? undefined,
+            plateNumber,
+            locationLat: location.lat,
+            locationLng: location.lng,
+            locationText: location.address,
+            scheduledDate: new Date(date),
+            scheduledTime: time,
+            totalPrice,
+            extrasSnapshot: extras ?? [],
+          },
+        });
+        return { full: false as const, order: created };
       },
-    });
+      { timeout: 15000 }
+    );
+
+    if (result.full) {
+      return NextResponse.json(
+        { error: "هذا الموعد اكتمل حجزه، من فضلك اختر موعدًا آخر", code: "SLOT_FULL" },
+        { status: 409 }
+      );
+    }
+    const order = result.order;
 
     after(() => notifyOrderCreated(order.id));
 

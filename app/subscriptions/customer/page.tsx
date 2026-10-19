@@ -52,7 +52,12 @@ export default function SubscriptionCustomerStep() {
           customer: { name: name.trim(), phone },
         }),
       });
-                if (!res.ok) throw new Error();
+      if (res.status === 409) {
+        const data = await res.json().catch(() => null);
+        setError(data?.error ?? "أحد المواعيد اكتمل حجزه، عُد لتعديل المواعيد");
+        return;
+      }
+      if (!res.ok) throw new Error();
       const created = await res.json();
       setCustomer({ name: name.trim(), phone, plate: plate.trim() });
       router.push(`/subscriptions/confirmation?subscriptionId=${created.id}`);
@@ -139,4 +144,4 @@ export default function SubscriptionCustomerStep() {
       </div>
     </main>
   );
-}
+}

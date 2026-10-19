@@ -66,7 +66,7 @@ export default function SubscriptionLocationPage() {
 
   const handleNext = () => {
     setLocation({ lat: marker.latitude, lng: marker.longitude, address });
-    router.push("/subscriptions/customer");
+    router.push("/subscriptions/schedule");
   };
 
   return (
@@ -128,4 +128,4 @@ export default function SubscriptionLocationPage() {
       </div>
     </main>
   );
-}
+}
