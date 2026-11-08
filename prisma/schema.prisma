@@ -226,6 +226,8 @@ model Settings {
   vatRate          Float    @default(15)
     pointsPerTask Int      @default(10)
   pointValue    Float    @default(0)
+  maintenanceMode    Boolean  @default(false)
+  maintenanceMessage String   @default("")
   updatedAt        DateTime @updatedAt
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { DEFAULT_MAINTENANCE_MESSAGE } from "../../lib/maintenanceText";
 
 type RecentOrder = {
   id: string;
@@ -42,6 +43,42 @@ const statusStyles: Record<string, string> = {
 export default function AdminOverviewPage() {
   const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const [maintenance, setMaintenance] = useState<{ enabled: boolean; message: string } | null>(null);
+  const [maintenanceMessage, setMaintenanceMessage] = useState("");
+  const [maintenanceBusy, setMaintenanceBusy] = useState(false);
+  const [maintenanceNote, setMaintenanceNote] = useState("");
+
+  useEffect(() => {
+    fetch("/api/admin/maintenance")
+      .then((res) => res.json())
+      .then((m) => {
+        setMaintenance({ enabled: Boolean(m.enabled), message: m.message ?? "" });
+        setMaintenanceMessage(m.message || DEFAULT_MAINTENANCE_MESSAGE);
+      })
+      .catch(() => {});
+  }, []);
+
+  const saveMaintenance = async (enabled: boolean) => {
+    if (enabled && !confirm("هيتم إيقاف الموقع للعملاء وعرض رسالة (تحت الإنشاء). لوحة الأدمن وتطبيق الموظفين هيفضلوا شغالين. متأكد؟")) return;
+    setMaintenanceBusy(true);
+    setMaintenanceNote("");
+    try {
+      const res = await fetch("/api/admin/maintenance", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled, message: maintenanceMessage }),
+      });
+      if (!res.ok) throw new Error();
+      const m = await res.json();
+      setMaintenance({ enabled: Boolean(m.enabled), message: m.message ?? "" });
+      setMaintenanceNote(enabled ? "تم إيقاف الموقع للعملاء" : "تم تشغيل الموقع");
+    } catch {
+      setMaintenanceNote("حدث خطأ، حاول مرة أخرى");
+    } finally {
+      setMaintenanceBusy(false);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -122,6 +159,52 @@ export default function AdminOverviewPage() {
       <div className="flex flex-col gap-1">
         <h1 className="text-text-main text-2xl font-extrabold">نظرة عامة</h1>
         <p className="text-text-secondary text-sm">ملخص حي على أداء المشروع، يتحدث تلقائيًا كل 15 ثانية</p>
+      </div>
+
+      <div className={`rounded-2xl p-5 flex flex-col gap-4 shadow-[0_2px_10px_rgba(16,24,40,0.05)] ${maintenance?.enabled ? "bg-red-50 border border-red-200" : "bg-white"}`}>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col gap-1">
+            <span className="text-text-main text-base font-extrabold">وضع الصيانة</span>
+            <span className="text-text-secondary text-xs">
+              {maintenance?.enabled
+                ? "الموقع متوقف حاليًا عن العملاء، ويظهر لهم رسالة (تحت الإنشاء). لوحة الأدمن وتطبيق الموظفين شغالين."
+                : "الموقع شغال. اضغط الزر لإيقافه مؤقتًا وعرض رسالة (تحت الإنشاء) للعملاء."}
+            </span>
+          </div>
+          {maintenance && (
+            <button
+              onClick={() => saveMaintenance(!maintenance.enabled)}
+              disabled={maintenanceBusy}
+              className={`shrink-0 px-5 py-3 rounded-xl text-sm font-bold text-white transition-colors disabled:opacity-60 ${
+                maintenance.enabled ? "bg-emerald-600" : "bg-red-500"
+              }`}
+            >
+              {maintenanceBusy ? "جارٍ الحفظ..." : maintenance.enabled ? "تشغيل الموقع" : "إيقاف الموقع"}
+            </button>
+          )}
+        </div>
+        <div className="flex flex-col gap-2">
+          <label className="text-text-main text-xs font-bold">الرسالة اللي تظهر للعملاء</label>
+          <textarea
+            value={maintenanceMessage}
+            onChange={(e) => setMaintenanceMessage(e.target.value)}
+            maxLength={300}
+            rows={2}
+            className="w-full rounded-xl border border-[#E3EAEC] bg-white px-4 py-3 text-sm text-text-main outline-none focus:border-primary resize-none"
+          />
+          <div className="flex items-center gap-3">
+            {maintenance?.enabled && (
+              <button
+                onClick={() => saveMaintenance(true)}
+                disabled={maintenanceBusy}
+                className="px-4 py-2 rounded-lg bg-white border border-[#E3EAEC] text-text-main text-xs font-bold disabled:opacity-60"
+              >
+                تحديث الرسالة
+              </button>
+            )}
+            {maintenanceNote && <span className="text-xs font-bold text-text-secondary">{maintenanceNote}</span>}
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-4 gap-5">

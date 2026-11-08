@@ -1,10 +1,17 @@
 import { NextResponse, after } from "next/server";
 import { prisma } from "../../../lib/prisma";
+import { getMaintenance } from "../../../lib/maintenance";
 import { notifySubscriptionCreated } from "../../../lib/smsEvents";
 import { lockDistrict, pickEmployeeForSlot } from "../../../lib/capacity";
 
 export async function POST(request: Request) {
   try {
+    if ((await getMaintenance()).on) {
+      return NextResponse.json(
+        { error: "الموقع متوقف مؤقتًا للصيانة، حاول مرة أخرى لاحقًا", code: "MAINTENANCE" },
+        { status: 503 }
+      );
+    }
     const body = await request.json();
     const { packageId, appointments, districtId, location, plateNumber, customer } = body;
 

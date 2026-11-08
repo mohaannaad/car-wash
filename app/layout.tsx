@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Cairo } from "next/font/google";
 import "./globals.css";
 import "mapbox-gl/dist/mapbox-gl.css";
+import { connection } from "next/server";
+import { getMaintenance } from "../lib/maintenance";
+import MaintenanceGate from "./components/MaintenanceGate";
 
 const cairo = Cairo({
   variable: "--font-cairo",
@@ -30,15 +33,20 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  await connection();
+  const maintenance = await getMaintenance();
+
   return (
     <html lang="ar" dir="rtl">
       <body className={`${cairo.variable} font-cairo antialiased`}>
-        {children}
+        <MaintenanceGate on={maintenance.on} message={maintenance.message}>
+          {children}
+        </MaintenanceGate>
       </body>
     </html>
   );
