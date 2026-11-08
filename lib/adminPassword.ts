@@ -14,6 +14,16 @@ export function safeEqual(a: string, b: string) {
 export async function verifyAdminPassword(password: string): Promise<boolean> {
   if (typeof password !== "string" || password.length === 0) return false;
 
+  // استرجاع: لو ADMIN_PASSWORD_RESET=true في إعدادات Vercel، نمسح الباسورد المخزّن في الداتابيز
+  // فيرجع الدخول بـ ADMIN_PASSWORD. شيل المتغير بعد ما تدخل.
+  if (process.env.ADMIN_PASSWORD_RESET === "true") {
+    try {
+      await prisma.adminCredential.deleteMany({ where: { id: "admin" } });
+    } catch {
+      // تجاهل
+    }
+  }
+
   try {
     const cred = await prisma.adminCredential.findUnique({ where: { id: "admin" } });
     if (cred) return await bcrypt.compare(password, cred.passwordHash);
